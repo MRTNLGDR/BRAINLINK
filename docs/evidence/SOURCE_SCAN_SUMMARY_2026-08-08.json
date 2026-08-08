@@ -1,0 +1,16 @@
+{
+  "uploaded_archive": "AFFINE.zip",
+  "uploaded_archive_sha256": "f65b6967dbf2992a4d39f51ddc48fdac04828a47d01599a53ca48cbd0e3b3f47",
+  "zip_entries": 14249,
+  "inventoried_source_entries": 11576,
+  "text_files_semantically_read": 10846,
+  "text_bytes_read": 182095550,
+  "text_lines_read": 1437552,
+  "binary_source_reference_files_hashed": 690,
+  "binary_bytes_hashed": 245637472,
+  "transport_artifacts_inventoried_not_semantically_read": 40,
+  "transport_artifact_examples": ["embedded .git", "bundled backend node_modules"],
+  "upstream_repository": "toeverything/AFFiNE",
+  "upstream_tag": "v0.27.0",
+  "upstream_commit": "c61cc6a86f5f8364732296f0bb8393b37e0f70b3"
+}

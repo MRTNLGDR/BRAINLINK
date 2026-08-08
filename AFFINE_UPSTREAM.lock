@@ -1,0 +1,6 @@
+repository=https://github.com/toeverything/AFFiNE.git
+tag=v0.27.0
+commit=c61cc6a86f5f8364732296f0bb8393b37e0f70b3
+license=MIT
+brainlink_overlay_sha256=1b4e3aa98dd378eb7299e071aa83329643114e40b3e66a378c319613a2a94b8d
+uploaded_affine_zip_sha256=f65b6967dbf2992a4d39f51ddc48fdac04828a47d01599a53ca48cbd0e3b3f47

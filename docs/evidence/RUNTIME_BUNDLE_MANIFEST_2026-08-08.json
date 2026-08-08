@@ -1,0 +1,19 @@
+{
+  "sha256": "1b4e3aa98dd378eb7299e071aa83329643114e40b3e66a378c319613a2a94b8d",
+  "decoded_size_bytes": 31841,
+  "base64_size_chars": 42456,
+  "source_file_count": 26,
+  "uncompressed_source_bytes": 117458,
+  "contains": [
+    "Brainlink runtime core",
+    "desktop and mobile router integration",
+    "root sidebar integration",
+    "PWA manifest branding",
+    "policy unit tests",
+    "validation scripts",
+    "runtime implementation report",
+    "accepted ADRs",
+    "Windows run scripts",
+    "AFFiNE-compatible package metadata"
+  ]
+}
