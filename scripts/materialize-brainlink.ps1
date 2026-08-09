@@ -13,7 +13,7 @@ $Repo = 'https://github.com/toeverything/AFFiNE.git'
 $Tag = 'v0.27.0'
 $Expected = 'c61cc6a86f5f8364732296f0bb8393b37e0f70b3'
 $ExpectedOverlay = '1b4e3aa98dd378eb7299e071aa83329643114e40b3e66a378c319613a2a94b8d'
-$ExpectedManifest = '820dfbf47e855af56ef7a135a43b944a808ccf9af1a7fce327781ab931b23109'
+$ExpectedManifest = 'd44d5eac2e35d7c2bbf483679bf06d11d064210c3bf816ede03ed520b891e7af'
 
 function Invoke-Checked([string]$Exe, [string[]]$Args) {
   & $Exe @Args
