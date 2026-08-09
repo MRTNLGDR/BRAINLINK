@@ -1,4 +1,5 @@
 @echo off
+rem Verification branch: prove all production JS/CSS are local through the exact clean-user BAT path; runtime logic equals main.
 setlocal EnableExtensions
 cd /d "%~dp0"
 title BRAINLINK - ONE CLICK
