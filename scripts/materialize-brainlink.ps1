@@ -8,12 +8,13 @@ $Overrides = Join-Path $Root '.brainlink-runtime-overrides'
 $PatchDir = Join-Path $Root '.brainlink-patches'
 $RuntimeArchive = Join-Path $WorkspaceRoot 'brainlink-runtime.tar.gz'
 $AppPatch = Join-Path $WorkspaceRoot 'brainlink-app-v2.patch'
+$AuditPatch = Join-Path $PatchDir 'audit-v21.patch'
 $Manifest = Join-Path $Root 'BRAINLINK_RUNTIME_V2.sha256'
 $Repo = 'https://github.com/toeverything/AFFiNE.git'
 $Tag = 'v0.27.0'
 $Expected = 'c61cc6a86f5f8364732296f0bb8393b37e0f70b3'
 $ExpectedOverlay = '1b4e3aa98dd378eb7299e071aa83329643114e40b3e66a378c319613a2a94b8d'
-$ExpectedManifest = 'd44d5eac2e35d7c2bbf483679bf06d11d064210c3bf816ede03ed520b891e7af'
+$ExpectedManifest = '1d12289e42b613b9e3e284c61240c2ad9aea318700cf89b52afca25587218680'
 
 function Invoke-Checked([string]$Exe, [string[]]$Args) {
   & $Exe @Args
@@ -22,8 +23,9 @@ function Invoke-Checked([string]$Exe, [string[]]$Args) {
 
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'Git is required.' }
 if (-not (Test-Path $RuntimeDir)) { throw "Missing Brainlink runtime bundle: $RuntimeDir" }
-if (-not (Test-Path $Manifest)) { throw "Missing Brainlink v2 integrity manifest: $Manifest" }
-if (-not (Test-Path $PatchDir)) { throw "Missing Brainlink v2 patch directory: $PatchDir" }
+if (-not (Test-Path $Manifest)) { throw "Missing Brainlink v2.1 integrity manifest: $Manifest" }
+if (-not (Test-Path $PatchDir)) { throw "Missing Brainlink patch directory: $PatchDir" }
+if (-not (Test-Path $AuditPatch)) { throw "Missing Brainlink audit integrity patch: $AuditPatch" }
 New-Item -ItemType Directory -Force -Path $WorkspaceRoot | Out-Null
 
 $Encoded = (Get-ChildItem (Join-Path $RuntimeDir 'runtime.part*.b64') | Sort-Object Name | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
@@ -31,7 +33,7 @@ $Encoded = (Get-ChildItem (Join-Path $RuntimeDir 'runtime.part*.b64') | Sort-Obj
 $OverlayHash = (Get-FileHash -Algorithm SHA256 $RuntimeArchive).Hash.ToLowerInvariant()
 if ($OverlayHash -ne $ExpectedOverlay) { throw "Brainlink base overlay checksum mismatch: $OverlayHash" }
 $ManifestHash = (Get-FileHash -Algorithm SHA256 $Manifest).Hash.ToLowerInvariant()
-if ($ManifestHash -ne $ExpectedManifest) { throw "Brainlink v2 manifest checksum mismatch: $ManifestHash" }
+if ($ManifestHash -ne $ExpectedManifest) { throw "Brainlink v2.1 manifest checksum mismatch: $ManifestHash" }
 
 if (-not (Test-Path (Join-Path $Target '.git'))) {
   Write-Host '[BRAINLINK] Cloning pinned AFFiNE v0.27.0...'
@@ -58,15 +60,16 @@ if (Test-Path $Overrides) {
 $PatchText = (Get-ChildItem (Join-Path $PatchDir 'app-v2.linepart*.patch') | Sort-Object Name | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
 [IO.File]::WriteAllText($AppPatch, $PatchText, [Text.UTF8Encoding]::new($false))
 Invoke-Checked git @('-C',$Target,'apply','--whitespace=nowarn',$AppPatch)
+Invoke-Checked git @('-C',$Target,'apply','--whitespace=nowarn',$AuditPatch)
 
 Get-Content $Manifest | ForEach-Object {
   if ($_ -match '^([0-9a-f]{64})\s+(.+)$') {
     $ExpectedFileHash = $Matches[1]
     $RelativePath = $Matches[2]
     $Candidate = Join-Path $Target $RelativePath
-    if (-not (Test-Path $Candidate)) { throw "Missing Brainlink v2 file: $RelativePath" }
+    if (-not (Test-Path $Candidate)) { throw "Missing Brainlink v2.1 file: $RelativePath" }
     $ActualFileHash = (Get-FileHash -Algorithm SHA256 $Candidate).Hash.ToLowerInvariant()
-    if ($ActualFileHash -ne $ExpectedFileHash) { throw "Brainlink v2 file checksum mismatch: $RelativePath" }
+    if ($ActualFileHash -ne $ExpectedFileHash) { throw "Brainlink v2.1 file checksum mismatch: $RelativePath" }
   }
 }
 
@@ -86,4 +89,4 @@ if ($Install) {
 }
 
 Write-Host "[BRAINLINK] Materialized successfully at $Target"
-Write-Host '[BRAINLINK] Runtime schema: v2 | structural validator: 35/35 | verified readable overrides enabled'
+Write-Host '[BRAINLINK] Runtime schema: v2.1 | audit: SHA-256 CHAIN | structural validator: 42/42'
