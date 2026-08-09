@@ -1,5 +1,5 @@
 @echo off
-rem Verification branch: execute the integrated Windows stable release gate through the public BAT.
+rem Verification branch: synchronize the integrated Windows stable release gate; runtime logic is identical to main.
 setlocal EnableExtensions
 cd /d "%~dp0"
 title BRAINLINK - ONE CLICK
