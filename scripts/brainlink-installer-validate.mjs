@@ -21,6 +21,7 @@ const buildBat = read('BRAINLINK_BUILD.bat');
 const bootstrap = read('scripts/brainlink-bootstrap.ps1');
 const oneClick = read('scripts/brainlink-one-click.mjs');
 const materialize = read('scripts/brainlink-materialize.mjs');
+const affineUiIntegration = read('scripts/apply-affine-ui-integration.mjs');
 const webPostcssFix = read('scripts/apply-affine-web-postcss-fix.mjs');
 const auditTransform = read('scripts/apply-audit-v21.mjs');
 const packagePatch = read('scripts/brainlink-package-patch.mjs');
@@ -48,7 +49,7 @@ check('Stable AFFiNE source is pinned and self-healed', materialize.includes("up
 check('Historical overlay cannot replace lock-sensitive upstream files', materialize.includes("'package.json', 'yarn.lock', '.yarnrc.yml', '.yarn/releases/yarn-4.13.0.cjs'") && materialize.includes("import { applyAffineWebPostcssFix } from './apply-affine-web-postcss-fix.mjs';") && materialize.includes('applyAffineWebPostcssFix(target);') && webPostcssFix.includes("loader: 'postcss-loader'") && webPostcssFix.includes('AFFiNE web PostCSS anchor expected exactly once'));
 check('Unsafe root package override is absent', !exists('.brainlink-runtime-overrides/package.json'));
 check('Malformed audit patch is provenance only', exists('.brainlink-patches/audit-v21.patch') && exists('.brainlink-patches/audit-v21.patch.b64') && !materialize.includes('decodeAuditPatch') && !materialize.includes('brainlink-audit-v21.patch'));
-check('Stable materializer invokes deterministic audit transform', materialize.includes("import { applyAuditV21 } from './apply-audit-v21.mjs';") && materialize.includes('applyAuditV21(target);'));
+check('Stable materializer invokes deterministic audit and UI transforms', materialize.includes("import { applyAuditV21 } from './apply-audit-v21.mjs';") && materialize.includes('applyAuditV21(target);') && materialize.includes("import { applyAffineUiIntegration } from './apply-affine-ui-integration.mjs';") && materialize.includes('applyAffineUiIntegration(target);') && affineUiIntegration.includes('data-ui="affine-integrated"') && affineUiIntegration.includes('Administration'));
 check('Audit transform requires exact final app checksum and anchors', auditTransform.includes("EXPECTED_APP_SHA256 = '5434d86452f0b1cabc6b3ee612c4ca3ac34223d5763db03649075829151fb6ad'") && auditTransform.includes('expected exactly once') && auditTransform.includes('legacy marker remains'));
 check('Package patch verifies exact upstream blob', packagePatch.includes("AFFINE_PACKAGE_BLOB_SHA1 = '35ad088813dc2078137a46795000a60d8e70ddc4'"));
 check('Package patch preserves AFFiNE dependency graph and deterministic web preview', packagePatch.includes("'@capacitor/cli': '^7.6.5'") && packagePatch.includes("vitest: '^4.1.8'") && packagePatch.includes("tar: '^7.5.16'") && packagePatch.includes("'brainlink:dev': 'yarn affine dev --package @affine/web'"));

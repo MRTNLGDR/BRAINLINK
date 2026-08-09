@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { applyAuditV21 } from './apply-audit-v21.mjs';
+import { applyAffineUiIntegration } from './apply-affine-ui-integration.mjs';
 import { applyAffineWebPostcssFix } from './apply-affine-web-postcss-fix.mjs';
 import { patchBrainlinkPackage } from './brainlink-package-patch.mjs';
 
@@ -272,6 +273,7 @@ export const materializeBrainlink = async options => {
   applyAffineWebPostcssFix(target);
   patchBrainlinkPackage(target);
   verifyManifest({ sourceRoot, target });
+  applyAffineUiIntegration(target);
 
   const runtimeEnv = {
     ...process.env,
