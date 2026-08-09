@@ -86,7 +86,7 @@ A clean base-overlay simulation applied the same source overrides and patch chai
 - compiled governance/integrity behavior cases: **15/15 PASS**;
 - standard SHA-256 vectors for empty string and `abc`: **PASS**;
 - policy, migration/import and audit-integrity Vitest suites are authored and registered as `brainlink:test`;
-- V5/stable-candidate non-breakage guard: **11/11 PASS**.
+- V5/stable-candidate non-breakage guard: **13/13 PASS**.
 
 The v2.2 Execution Envelope development harness has separately passed **16/16 behavior cases** and **12/12 candidate invariants** in development materialization, while keeping v2.1 as the release baseline.
 
