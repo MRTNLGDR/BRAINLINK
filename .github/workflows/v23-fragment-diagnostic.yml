@@ -36,4 +36,5 @@ jobs:
             .brainlink-zip-candidate-v23-runtime/runtime.part*.b64
             brainlink-v23-fragment-sha256.txt
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 30
