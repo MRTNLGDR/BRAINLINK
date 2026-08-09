@@ -1,0 +1,270 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-08-09T18:00:00.000Z",
+  "state": "READY",
+  "summary": {
+    "totalModules": 4,
+    "activeModules": 4,
+    "totalTasks": 8,
+    "doneTasks": 7,
+    "pendingTasks": 1,
+    "blockedTasks": 0,
+    "openAlerts": 1,
+    "documents": 4,
+    "progressPercent": 88
+  },
+  "modules": [
+    {
+      "id": "BL-MOD-INSTALLER",
+      "name": "Instalador e runtime",
+      "description": "Materializacao deterministica, validacao e inicializacao local do Brainlink.",
+      "owner": "Brainlink Core",
+      "status": "ACTIVE",
+      "progressPercent": 100,
+      "updatedAt": "2026-08-09T17:20:00.000Z"
+    },
+    {
+      "id": "BL-MOD-UI",
+      "name": "Integracao AFFiNE",
+      "description": "Navegacao, identidade visual e experiencia Brainlink integradas ao AFFiNE.",
+      "owner": "Brainlink Experience",
+      "status": "ACTIVE",
+      "progressPercent": 100,
+      "updatedAt": "2026-08-09T17:30:00.000Z"
+    },
+    {
+      "id": "BL-MOD-AI",
+      "name": "Brainlink AI",
+      "description": "Motor local-first com worker interno e OpenRouter como provider opcional.",
+      "owner": "Brainlink Intelligence",
+      "status": "ACTIVE",
+      "progressPercent": 100,
+      "updatedAt": "2026-08-09T17:40:00.000Z"
+    },
+    {
+      "id": "BL-MOD-GOVERNANCE",
+      "name": "Governance Snapshot Bridge",
+      "description": "Fonte unica, API, eventos e painel operacional auditavel.",
+      "owner": "Brainlink Governance",
+      "status": "ACTIVE",
+      "progressPercent": 100,
+      "updatedAt": "2026-08-09T18:00:00.000Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "BL-TASK-001",
+      "title": "Corrigir pipeline PostCSS do AFFiNE",
+      "moduleId": "BL-MOD-INSTALLER",
+      "status": "DONE",
+      "priority": "CRITICAL",
+      "owner": "Brainlink Core",
+      "acceptanceCriteria": "Preview compila sem carregar Tailwind CSS 4 como plugin PostCSS legado.",
+      "updatedAt": "2026-08-09T17:20:00.000Z"
+    },
+    {
+      "id": "BL-TASK-002",
+      "title": "Integrar identidade Brainlink ao AFFiNE",
+      "moduleId": "BL-MOD-UI",
+      "status": "DONE",
+      "priority": "HIGH",
+      "owner": "Brainlink Experience",
+      "acceptanceCriteria": "Rotas e componentes seguem o sistema visual nativo do AFFiNE.",
+      "updatedAt": "2026-08-09T17:30:00.000Z"
+    },
+    {
+      "id": "BL-TASK-003",
+      "title": "Implementar motor Brainlink local-first",
+      "moduleId": "BL-MOD-AI",
+      "status": "DONE",
+      "priority": "CRITICAL",
+      "owner": "Brainlink Intelligence",
+      "acceptanceCriteria": "Inferencia local funciona pelo worker interno sem Ollama ou LM Studio.",
+      "updatedAt": "2026-08-09T17:40:00.000Z"
+    },
+    {
+      "id": "BL-TASK-004",
+      "title": "Disponibilizar OpenRouter como provider opcional",
+      "moduleId": "BL-MOD-AI",
+      "status": "DONE",
+      "priority": "HIGH",
+      "owner": "Brainlink Intelligence",
+      "acceptanceCriteria": "Provider remoto e opt-in, sem substituir o motor local padrao.",
+      "updatedAt": "2026-08-09T17:42:00.000Z"
+    },
+    {
+      "id": "BL-TASK-005",
+      "title": "Publicar snapshot de governanca validado",
+      "moduleId": "BL-MOD-GOVERNANCE",
+      "status": "DONE",
+      "priority": "CRITICAL",
+      "owner": "Brainlink Governance",
+      "acceptanceCriteria": "GET /api/governance/snapshot entrega contrato valido e sem cache.",
+      "updatedAt": "2026-08-09T18:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-006",
+      "title": "Sincronizar painel por polling, foco, evento e SSE",
+      "moduleId": "BL-MOD-GOVERNANCE",
+      "status": "DONE",
+      "priority": "HIGH",
+      "owner": "Brainlink Governance",
+      "acceptanceCriteria": "Painel refaz a consulta automaticamente e permite atualizacao manual.",
+      "updatedAt": "2026-08-09T18:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-007",
+      "title": "Documentar backup, restauracao e operacao",
+      "moduleId": "BL-MOD-GOVERNANCE",
+      "status": "DONE",
+      "priority": "MEDIUM",
+      "owner": "Brainlink Governance",
+      "acceptanceCriteria": "Runbook cobre fonte, falhas, seguranca, backup e restore.",
+      "updatedAt": "2026-08-09T18:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-008",
+      "title": "Reconciliar a branch Brainlink com a evolucao da main",
+      "moduleId": "BL-MOD-INSTALLER",
+      "status": "TODO",
+      "priority": "MEDIUM",
+      "owner": "Repository Maintainers",
+      "acceptanceCriteria": "PR volta a ser mesclavel sem sobrescrever mudancas independentes da main.",
+      "updatedAt": "2026-08-09T18:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-009",
+      "title": "Corrigir contraste do painel no tema escuro do AFFiNE",
+      "moduleId": "BL-MOD-UI",
+      "status": "DONE",
+      "priority": "HIGH",
+      "owner": "Brainlink Experience",
+      "acceptanceCriteria": "Titulo principal permanece legivel sobre o hero claro quando o workspace usa tema escuro.",
+      "updatedAt": "2026-08-09T19:00:00.000Z"
+    }
+  ],
+  "alerts": [
+    {
+      "id": "BL-ALERT-001",
+      "title": "Divergencia entre a branch Brainlink e a main",
+      "description": "A main avancou de forma independente e o PR requer reconciliacao controlada.",
+      "severity": "MEDIUM",
+      "status": "OPEN",
+      "moduleId": "BL-MOD-INSTALLER",
+      "action": "Revisar o delta da main e executar merge ou rebase sem force push.",
+      "updatedAt": "2026-08-09T18:00:00.000Z"
+    },
+    {
+      "id": "BL-ALERT-002",
+      "title": "Conflito Tailwind PostCSS",
+      "description": "Configuracao legada tentou usar tailwindcss diretamente como plugin PostCSS.",
+      "severity": "HIGH",
+      "status": "RESOLVED",
+      "moduleId": "BL-MOD-INSTALLER",
+      "action": "Manter a correcao deterministica no materializador.",
+      "updatedAt": "2026-08-09T17:20:00.000Z"
+    },
+    {
+      "id": "BL-ALERT-003",
+      "title": "Baixo contraste do titulo no tema escuro",
+      "description": "O titulo do hero herdava a cor clara global do workspace sobre uma superficie clara.",
+      "severity": "HIGH",
+      "status": "RESOLVED",
+      "moduleId": "BL-MOD-UI",
+      "action": "Fixar a cor semantica escura do titulo somente dentro do hero claro.",
+      "updatedAt": "2026-08-09T19:00:00.000Z"
+    }
+  ],
+  "changelog": [
+    {
+      "id": "BL-CHANGE-004",
+      "version": "2.1-dev.1",
+      "title": "Compatibilidade visual com tema escuro",
+      "description": "Contraste do titulo de governanca corrigido sem alterar o tema global do AFFiNE.",
+      "at": "2026-08-09T19:00:00.000Z"
+    },
+    {
+      "id": "BL-CHANGE-003",
+      "version": "2.1-dev",
+      "title": "Governance Snapshot Bridge",
+      "description": "Fonte unica persistente, endpoint, eventos e painel operacional integrados.",
+      "at": "2026-08-09T18:00:00.000Z"
+    },
+    {
+      "id": "BL-CHANGE-002",
+      "version": "2.0-dev",
+      "title": "Brainlink AI local-first",
+      "description": "Worker interno e OpenRouter opcional integrados a rota nativa de AI.",
+      "commit": "26291a391866f96bea3c1e8f5bc5e362cfb20bc5",
+      "at": "2026-08-09T17:40:00.000Z"
+    }
+  ],
+  "logs": [
+    {
+      "id": "BL-LOG-005",
+      "level": "INFO",
+      "event": "DARK_THEME_CONTRAST_FIXED",
+      "message": "Gap visual encontrado no preview foi registrado e corrigido no template duravel.",
+      "actor": "Codex",
+      "at": "2026-08-09T19:00:00.000Z"
+    },
+    {
+      "id": "BL-LOG-004",
+      "level": "INFO",
+      "event": "GOVERNANCE_BRIDGE_IMPLEMENTED",
+      "message": "Bridge de governanca integrada ao runtime, servidor de desenvolvimento e interface.",
+      "actor": "Codex",
+      "at": "2026-08-09T18:00:00.000Z"
+    },
+    {
+      "id": "BL-LOG-003",
+      "level": "INFO",
+      "event": "LOCAL_AI_ENABLED",
+      "message": "Motor interno local-first habilitado com OpenRouter opcional.",
+      "actor": "Codex",
+      "at": "2026-08-09T17:40:00.000Z"
+    },
+    {
+      "id": "BL-LOG-002",
+      "level": "INFO",
+      "event": "AFFINE_UI_INTEGRATED",
+      "message": "Interface Brainlink alinhada ao sistema visual do AFFiNE.",
+      "actor": "Codex",
+      "at": "2026-08-09T17:30:00.000Z"
+    }
+  ],
+  "documents": [
+    {
+      "id": "BL-DOC-001",
+      "title": "Governance Snapshot Bridge",
+      "kind": "RUNBOOK",
+      "path": "docs/GOVERNANCE_SNAPSHOT_BRIDGE.md",
+      "status": "CURRENT",
+      "updatedAt": "2026-08-09T18:00:00.000Z"
+    },
+    {
+      "id": "BL-DOC-002",
+      "title": "Matriz de rastreabilidade",
+      "kind": "TRACEABILITY",
+      "path": "governance/TRACEABILITY.md",
+      "status": "CURRENT",
+      "updatedAt": "2026-08-09T18:00:00.000Z"
+    },
+    {
+      "id": "BL-DOC-003",
+      "title": "Manifesto de arquivos Brainlink",
+      "kind": "MANIFEST",
+      "path": "brainlink-files.manifest",
+      "status": "CURRENT",
+      "updatedAt": "2026-08-09T17:20:00.000Z"
+    },
+    {
+      "id": "BL-DOC-004",
+      "title": "Registro imutavel de origem",
+      "kind": "LOCK",
+      "path": "brainlink-source.lock.json",
+      "status": "CURRENT",
+      "updatedAt": "2026-08-09T17:20:00.000Z"
+    }
+  ]
+}

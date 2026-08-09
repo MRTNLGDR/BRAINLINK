@@ -1,0 +1,61 @@
+.bl-gov-shell { color: var(--affine-text-primary-color, #121212); display: flex; flex-direction: column; gap: 18px; min-height: 100%; padding: 24px clamp(18px, 3vw, 40px) 48px; }
+.bl-gov-hero { align-items: flex-end; background: linear-gradient(130deg, #f4f6ff 0%, #eef8f4 52%, #fff9ec 100%); border: 1px solid rgba(22, 28, 45, .09); border-radius: 18px; display: flex; gap: 24px; justify-content: space-between; overflow: hidden; padding: 28px; position: relative; }
+.bl-gov-hero::after { background: radial-gradient(circle, rgba(53, 109, 255, .16), transparent 68%); content: ''; height: 220px; pointer-events: none; position: absolute; right: -55px; top: -110px; width: 220px; }
+.bl-gov-hero h2, .bl-gov-error h2 { font-size: clamp(25px, 3vw, 38px); letter-spacing: -.04em; line-height: 1.05; margin: 6px 0 8px; }
+.bl-gov-hero h2 { color: #161922; }
+.bl-gov-hero p, .bl-gov-card p, .bl-gov-feature p, .bl-gov-error p { color: #606575; line-height: 1.55; margin: 0; }
+.bl-gov-kicker, .bl-gov-error > span { color: #3159c7; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.bl-gov-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 9px; justify-content: flex-end; position: relative; z-index: 1; }
+.bl-gov-actions button, .bl-gov-error button { background: #15171c; border: 0; border-radius: 9px; color: #fff; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; padding: 10px 14px; }
+.bl-gov-actions button:disabled { cursor: wait; opacity: .6; }
+.bl-gov-sync { align-items: center; color: #626775; display: flex; font-size: 12px; gap: 7px; }
+.bl-gov-sync i { background: #c18d26; border-radius: 50%; height: 7px; width: 7px; }
+.bl-gov-sync i.is-online { background: #1a9b62; box-shadow: 0 0 0 4px rgba(26, 155, 98, .12); }
+.bl-gov-meta { color: #777c88; font-size: 12px; padding: 0 4px; }
+.bl-gov-tabs { border-bottom: 1px solid #e2e4e9; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.bl-gov-tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; color: #747986; cursor: pointer; font: inherit; font-size: 13px; margin-bottom: -1px; padding: 10px 13px; white-space: nowrap; }
+.bl-gov-tabs button.is-active { border-color: #3159c7; color: #171a21; font-weight: 650; }
+.bl-gov-summary { display: grid; gap: 10px; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.bl-gov-stat, .bl-gov-card, .bl-gov-feature, .bl-gov-table-wrap, .bl-gov-timeline { background: var(--affine-background-primary-color, #fff); border: 1px solid #e5e6ea; border-radius: 14px; }
+.bl-gov-stat { display: flex; flex-direction: column; gap: 8px; min-height: 78px; padding: 15px; }
+.bl-gov-stat span { color: #797e8b; font-size: 11px; }
+.bl-gov-stat strong { font-size: 23px; letter-spacing: -.035em; }
+.bl-gov-stack { display: flex; flex-direction: column; gap: 14px; }
+.bl-gov-feature { padding: 22px; }
+.bl-gov-feature h3, .bl-gov-card h3 { font-size: 17px; margin: 5px 0 7px; }
+.bl-gov-progress { background: #eceef2; border-radius: 99px; height: 5px; margin-top: 18px; overflow: hidden; }
+.bl-gov-progress > span { background: linear-gradient(90deg, #3159c7, #2aaf78); border-radius: inherit; display: block; height: 100%; }
+.bl-gov-columns { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bl-gov-card { overflow: hidden; padding: 18px; }
+.bl-gov-card > header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 10px; }
+.bl-gov-card > header h3 { margin: 0; }
+.bl-gov-row { align-items: flex-start; border-top: 1px solid #eceef1; display: flex; gap: 12px; justify-content: space-between; padding: 13px 0; }
+.bl-gov-row div { display: flex; flex-direction: column; gap: 4px; }
+.bl-gov-row strong { font-size: 13px; }
+.bl-gov-row span, .bl-gov-module small { color: #777c88; font-size: 11px; line-height: 1.4; }
+.bl-gov-grid { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bl-gov-module { min-height: 165px; }
+.bl-gov-badge { background: #eef0f3; border-radius: 99px; color: #525763; display: inline-flex; font-size: 10px; font-weight: 700; letter-spacing: .035em; padding: 5px 8px; }
+.bl-gov-badge--success { background: #e4f6ed; color: #157348; }
+.bl-gov-badge--warning { background: #fff1d3; color: #8a5b00; }
+.bl-gov-badge--danger { background: #fee9e6; color: #a6372b; }
+.bl-gov-table-wrap { overflow: auto; }
+.bl-gov-table { border-collapse: collapse; font-size: 12px; min-width: 850px; width: 100%; }
+.bl-gov-table th { background: #f7f8fa; color: #737885; font-size: 10px; letter-spacing: .06em; text-align: left; text-transform: uppercase; }
+.bl-gov-table th, .bl-gov-table td { border-bottom: 1px solid #eceef1; padding: 12px 14px; vertical-align: top; }
+.bl-gov-table tbody tr:last-child td { border-bottom: 0; }
+.bl-gov-timeline { padding: 8px 18px; }
+.bl-gov-timeline article { display: grid; gap: 13px; grid-template-columns: 9px 1fr; padding: 15px 0; }
+.bl-gov-timeline article + article { border-top: 1px solid #eceef1; }
+.bl-gov-timeline i { background: #3159c7; border-radius: 50%; height: 8px; margin-top: 5px; width: 8px; }
+.bl-gov-timeline strong { font-size: 13px; }
+.bl-gov-timeline p { color: #555b68; font-size: 12px; line-height: 1.5; margin: 5px 0; }
+.bl-gov-timeline span { color: #8b909b; font-size: 10px; }
+.bl-gov-empty { color: #777c88; padding: 28px; text-align: center; }
+.bl-gov-error { align-items: flex-start; background: #fff; border: 1px solid #e3e5e9; border-left: 4px solid #c74b3d; border-radius: 14px; display: flex; flex-direction: column; padding: 28px; }
+.bl-gov-error button { margin-top: 18px; }
+.bl-gov-skeleton { animation: bl-gov-pulse 1.4s ease-in-out infinite; background: linear-gradient(100deg, #eef0f3 20%, #f8f9fa 42%, #eef0f3 64%); background-size: 200% 100%; border-radius: 12px; height: 88px; }
+.bl-gov-skeleton--hero { height: 150px; }
+@keyframes bl-gov-pulse { to { background-position-x: -200%; } }
+@media (max-width: 960px) { .bl-gov-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .bl-gov-shell { padding: 16px 12px 36px; } .bl-gov-hero { align-items: flex-start; flex-direction: column; padding: 22px; } .bl-gov-actions { justify-content: flex-start; } .bl-gov-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .bl-gov-columns, .bl-gov-grid { grid-template-columns: 1fr; } }

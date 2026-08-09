@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { createGovernanceBridge } from './brainlink-governance-store.mjs';
 
 const args = process.argv.slice(2);
 const valueOf = (name, fallback) => {
@@ -57,8 +60,15 @@ const sendFile = (res, file) => {
   fs.createReadStream(file).pipe(res);
 };
 
-const server = http.createServer((req, res) => {
+const governanceFile = path.resolve(
+  process.env.BRAINLINK_GOVERNANCE_FILE ??
+    path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'governance', 'governance-snapshot.json')
+);
+const governanceBridge = createGovernanceBridge({ snapshotFile: governanceFile });
+
+const server = http.createServer(async (req, res) => {
   try {
+    if (await governanceBridge.handle(req, res)) return;
     if (req.url === '/healthz') {
       const body = JSON.stringify({ status: 'ok', product: 'brainlink', pid: process.pid });
       res.writeHead(200, {
