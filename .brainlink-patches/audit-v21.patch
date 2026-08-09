@@ -1,0 +1,65 @@
+--- a/packages/frontend/core/src/brainlink/app.tsx
++++ b/packages/frontend/core/src/brainlink/app.tsx
+@@ -3,6 +3,7 @@
+ import { useLocation, useNavigate } from 'react-router-dom';
+ 
+ import { BRAINLINK_SCREENS } from './catalog';
++import { appendAuditEvent, verifyAuditChain } from './integrity';
+ import {
+   canTaskComplete,
+   canWorkerRun,
+@@ -22,7 +23,6 @@
+   saveBrainlinkState,
+ } from './store';
+ import type {
+-  BrainlinkAuditEvent,
+   BrainlinkState,
+   BrainlinkTaskStatus,
+   BrainlinkWorker,
+@@ -197,15 +197,13 @@
+     setState(previous => {
+       const draft = cloneState(previous);
+       mutate(draft);
+-      const event: BrainlinkAuditEvent = {
++      appendAuditEvent(draft.audit, {
+         id: createBrainlinkId('AUD'),
+         action,
+         detail,
+         actor: draft.settings.actorName || 'Local Operator',
+         createdAt: new Date().toISOString(),
+-      };
+-      draft.audit.unshift(event);
+-      draft.audit = draft.audit.slice(0, 1000);
++      });
+       saveBrainlinkState(draft);
+       return draft;
+     });
+@@ -336,7 +334,7 @@
+     if (!file) return;
+     try {
+       const parsed = parseBrainlinkState(JSON.parse(await file.text()));
+-      parsed.audit.unshift({ id: createBrainlinkId('AUD'), action: 'STATE_IMPORTED', detail: `Imported and validated backup ${file.name}`, actor: parsed.settings.actorName || 'Local Operator', createdAt: new Date().toISOString() });
++      appendAuditEvent(parsed.audit, { id: createBrainlinkId('AUD'), action: 'STATE_IMPORTED', detail: `Imported and validated backup ${file.name}`, actor: parsed.settings.actorName || 'Local Operator', createdAt: new Date().toISOString() });
+       saveBrainlinkState(parsed);
+       setState(parsed);
+       setToast('Backup imported and validated.');
+@@ -447,7 +445,10 @@
+     return <div className="bl-grid"><Card title="Attach evidence" span="12"><form className="bl-form" onSubmit={addEvidence}><div className="bl-field"><label>Title</label><input name="title" required /></div><div className="bl-field"><label>Task</label><select name="taskId"><option value="">General</option>{state.tasks.map(task => <option key={task.id} value={task.id}>{task.title}</option>)}</select></div><div className="bl-field" data-span="6"><label>Detail / hash / path / test result</label><input name="detail" /></div><div className="bl-field"><label>&nbsp;</label><button className="bl-btn" data-primary="true">Attach</button></div></form></Card><Card title="Evidence ledger" span="12"><table className="bl-table"><thead><tr><th>Time</th><th>Type</th><th>Title</th><th>Actor</th><th>Task</th></tr></thead><tbody>{state.evidence.map(item => <tr key={item.id}><td>{formatDate(item.createdAt)}</td><td><Badge>{item.type}</Badge></td><td>{item.title}<small style={{ display:'block',color:'#727b86',marginTop:3 }}>{item.detail}</small></td><td>{item.actor}</td><td>{item.taskId || '—'}</td></tr>)}</tbody></table></Card></div>;
+   };
+ 
+-  const renderAudit = () => <Card title="Append-only application audit ledger" span="12"><table className="bl-table"><thead><tr><th>Time</th><th>Action</th><th>Detail</th><th>Actor</th></tr></thead><tbody>{state.audit.map(item => <tr key={item.id}><td>{formatDate(item.createdAt)}</td><td>{item.action}</td><td>{item.detail}</td><td>{item.actor}</td></tr>)}</tbody></table></Card>;
++  const renderAudit = () => {
++    const integrity = verifyAuditChain(state.audit);
++    return <Card title="SHA-256 chained audit ledger" span="12"><div className="bl-meta" style={{ marginBottom: 12 }}><Badge tone={integrity.valid ? 'good' : 'bad'}>{integrity.valid ? 'CHAIN VALID' : `CHAIN INVALID · ${integrity.eventId}`}</Badge><Badge>{state.audit.length} EVENTS</Badge></div><table className="bl-table"><thead><tr><th>Seq</th><th>Time</th><th>Action</th><th>Detail</th><th>Actor</th><th>Hash</th></tr></thead><tbody>{state.audit.map(item => <tr key={item.id}><td>{item.sequence ?? '—'}</td><td>{formatDate(item.createdAt)}</td><td>{item.action}</td><td>{item.detail}</td><td>{item.actor}</td><td><code title={item.eventHash}>{item.eventHash ? `${item.eventHash.slice(0, 10)}…` : 'UNSEALED'}</code></td></tr>)}</tbody></table></Card>;
++  };
+ 
+   const renderBugs = () => {
+     const addBug = (event: FormEvent<HTMLFormElement>) => {
+@@ -520,7 +521,7 @@
+ 
+   const renderCalendar = () => <div className="bl-grid">{state.tasks.filter(task => task.dueAt).sort((a,b) => String(a.dueAt).localeCompare(String(b.dueAt))).map(task => <Card key={task.id} title={task.dueAt} span="4"><p>{task.title}</p><div className="bl-meta"><Badge tone={toneForStatus(task.status)}>{task.status}</Badge><Badge>{task.owner}</Badge></div></Card>)}{state.tasks.every(task => !task.dueAt) ? <Card span="12"><div className="bl-empty">Add due dates to tasks to populate Calendar.</div></Card> : null}</div>;
+ 
+-  const renderSettings = () => <div className="bl-grid"><Card title="Runtime settings" span="6"><div className="bl-form"><div className="bl-field" data-span="12"><label>Actor name</label><input value={state.settings.actorName} onChange={event => commit('SETTING_CHANGED', 'actorName', draft => { draft.settings.actorName = event.target.value; })} /></div><div className="bl-field" data-span="12"><label>Organization ID</label><input value={state.settings.organizationId} onChange={event => commit('SETTING_CHANGED', 'organizationId', draft => { draft.settings.organizationId = event.target.value || 'local'; })} /></div><div className="bl-field" data-span="12"><label><input type="checkbox" checked={state.settings.workerReadGate} onChange={event => commit('SETTING_CHANGED', 'workerReadGate', draft => { draft.settings.workerReadGate = event.target.checked; })} style={{ width:'auto',marginRight:8 }} /> Worker read gate</label></div><div className="bl-field" data-span="12"><label><input type="checkbox" checked={state.settings.requireEvidenceForDone} onChange={event => commit('SETTING_CHANGED', 'requireEvidenceForDone', draft => { draft.settings.requireEvidenceForDone = event.target.checked; })} style={{ width:'auto',marginRight:8 }} /> Evidence required for DONE</label></div><div className="bl-field" data-span="12"><label><input type="checkbox" checked={state.settings.localOnly} onChange={event => commit('SETTING_CHANGED', 'localOnly', draft => { draft.settings.localOnly = event.target.checked; })} style={{ width:'auto',marginRight:8 }} /> Local-only runtime store</label></div></div></Card><Card title="Backup and restore" span="6"><p>Export includes projects, rules, receipts, tasks, workers, evidence, audit, approvals, bugs, archetypes and connector metadata. Secret values are never part of this state.</p><div className="bl-actions" style={{ marginTop:12 }}><button className="bl-btn" data-primary="true" onClick={exportState}>Export JSON</button><label className="bl-btn">Import JSON<input type="file" accept="application/json" hidden onChange={importState} /></label><button className="bl-btn" data-danger="true" onClick={() => { if (!window.confirm('Reset all local Brainlink state? Export a backup first if this data matters.')) return; const fresh = createDefaultBrainlinkState(); fresh.audit.unshift({ id:createBrainlinkId('AUD'), action:'STATE_RESET', detail:'Local Brainlink state was explicitly reset by the operator.', actor:state.settings.actorName, createdAt:new Date().toISOString() }); saveBrainlinkState(fresh); setState(fresh); setToast('Local Brainlink state reset.'); }}>Reset local state</button></div></Card><Card title="Storage" span="12"><div className="bl-code">{BRAINLINK_STORAGE_KEY}\nschemaVersion: {state.schemaVersion}\nmode: {state.settings.localOnly ? 'LOCAL_ONLY' : 'ADAPTER_READY'}\naudit events: {state.audit.length}\nevidence records: {state.evidence.length}</div></Card></div>;
++  const renderSettings = () => <div className="bl-grid"><Card title="Runtime settings" span="6"><div className="bl-form"><div className="bl-field" data-span="12"><label>Actor name</label><input value={state.settings.actorName} onChange={event => commit('SETTING_CHANGED', 'actorName', draft => { draft.settings.actorName = event.target.value; })} /></div><div className="bl-field" data-span="12"><label>Organization ID</label><input value={state.settings.organizationId} onChange={event => commit('SETTING_CHANGED', 'organizationId', draft => { draft.settings.organizationId = event.target.value || 'local'; })} /></div><div className="bl-field" data-span="12"><label><input type="checkbox" checked={state.settings.workerReadGate} onChange={event => commit('SETTING_CHANGED', 'workerReadGate', draft => { draft.settings.workerReadGate = event.target.checked; })} style={{ width:'auto',marginRight:8 }} /> Worker read gate</label></div><div className="bl-field" data-span="12"><label><input type="checkbox" checked={state.settings.requireEvidenceForDone} onChange={event => commit('SETTING_CHANGED', 'requireEvidenceForDone', draft => { draft.settings.requireEvidenceForDone = event.target.checked; })} style={{ width:'auto',marginRight:8 }} /> Evidence required for DONE</label></div><div className="bl-field" data-span="12"><label><input type="checkbox" checked={state.settings.localOnly} onChange={event => commit('SETTING_CHANGED', 'localOnly', draft => { draft.settings.localOnly = event.target.checked; })} style={{ width:'auto',marginRight:8 }} /> Local-only runtime store</label></div></div></Card><Card title="Backup and restore" span="6"><p>Export includes projects, rules, receipts, tasks, workers, evidence, audit, approvals, bugs, archetypes and connector metadata. Secret values are never part of this state.</p><div className="bl-actions" style={{ marginTop:12 }}><button className="bl-btn" data-primary="true" onClick={exportState}>Export JSON</button><label className="bl-btn">Import JSON<input type="file" accept="application/json" hidden onChange={importState} /></label><button className="bl-btn" data-danger="true" onClick={() => { if (!window.confirm('Reset all local Brainlink state? Export a backup first if this data matters.')) return; const fresh = createDefaultBrainlinkState(); appendAuditEvent(fresh.audit, { id:createBrainlinkId('AUD'), action:'STATE_RESET', detail:'Local Brainlink state was explicitly reset by the operator.', actor:state.settings.actorName, createdAt:new Date().toISOString() }); saveBrainlinkState(fresh); setState(fresh); setToast('Local Brainlink state reset.'); }}>Reset local state</button></div></Card><Card title="Storage" span="12"><div className="bl-code">{BRAINLINK_STORAGE_KEY}\nschemaVersion: {state.schemaVersion}\nmode: {state.settings.localOnly ? 'LOCAL_ONLY' : 'ADAPTER_READY'}\naudit events: {state.audit.length}\nevidence records: {state.evidence.length}</div></Card></div>;
+ 
+   const renderDocuments = (canvas = false) => <div className="bl-grid"><Card title={canvas ? 'BlockSuite Canvas integration' : 'AFFiNE document engine integration'} span="8"><p>{canvas ? 'Brainlink preserves the upstream BlockSuite canvas instead of reimplementing it. Use the AFFiNE workspace for real editing; Brainlink governance remains available under /brainlink.' : 'Brainlink preserves AFFiNE documents, CRDT and local-first workspace behavior. This runtime adds governance without replacing the upstream document engine.'}</p><div className="bl-actions" style={{ marginTop:12 }}><button className="bl-btn" data-primary="true" onClick={() => navigate('/')}>Open workspace</button><button className="bl-btn" onClick={() => navigateTo('audit')}>View governance ledger</button></div></Card><Card title="Integration contract" span="4"><p>Upstream surface reuse is intentional: no fake document editor or disconnected canvas was added.</p><div className="bl-meta"><Badge tone="good">UPSTREAM REUSE</Badge><Badge>LOCAL-FIRST</Badge></div></Card></div>;
