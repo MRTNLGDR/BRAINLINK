@@ -12,6 +12,10 @@ Brainlink e o unico nome de produto apresentado ao usuario. O editor, os documen
 - O favicon e imagens identificadas como icone do aplicativo recebem o monograma Brainlink.
 - Links publicos de download e apresentacao apontam para o repositorio e releases Brainlink.
 - Os modulos Brainlink materializados removem referencias visiveis ao nome legado.
+- O Brainlink e registrado como rota nativa do workspace em `/workspace/:workspaceId/brainlink/*`.
+- A barra lateral principal oferece uma unica entrada Brainlink usando a navegacao do workbench.
+- Os modulos internos sao organizados em Operacao, Conhecimento, Governanca e Sistema dentro do painel ativo.
+- O shell Brainlink independente, sua sidebar e sua topbar duplicadas nao sao renderizados.
 
 ## Limite tecnico e legal
 
@@ -19,4 +23,4 @@ Nomes internos de pacotes, caminhos de importacao, locks, hashes, repositorios d
 
 ## Gate
 
-O teste de marca exige bootstrap global, observacao de mutacoes, substituicao de atributos, titulo Brainlink e materializacao posterior aos demais transforms. O preview deve apresentar contagem zero para o nome legado no texto visivel, nos atributos auditados e no titulo da pagina.
+O teste de marca exige bootstrap global, observacao de mutacoes, substituicao de atributos, titulo Brainlink e materializacao posterior aos demais transforms. O gate de shell exige rota do workbench, entrada nativa na barra lateral, painel real do Brainlink e ausencia da sidebar duplicada. O preview deve apresentar contagem zero para o nome legado no texto visivel, nos atributos auditados e no titulo da pagina.

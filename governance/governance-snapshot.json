@@ -1,17 +1,17 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-08-09T18:00:00.000Z",
+  "generatedAt": "2026-08-09T22:10:00.000Z",
   "state": "READY",
   "summary": {
-    "totalModules": 4,
-    "activeModules": 4,
-    "totalTasks": 8,
-    "doneTasks": 7,
-    "pendingTasks": 1,
+    "totalModules": 5,
+    "activeModules": 5,
+    "totalTasks": 14,
+    "doneTasks": 12,
+    "pendingTasks": 2,
     "blockedTasks": 0,
-    "openAlerts": 1,
-    "documents": 4,
-    "progressPercent": 88
+    "openAlerts": 2,
+    "documents": 5,
+    "progressPercent": 86
   },
   "modules": [
     {
@@ -34,12 +34,12 @@
     },
     {
       "id": "BL-MOD-UI",
-      "name": "Integracao AFFiNE",
-      "description": "Navegacao, identidade visual e experiencia Brainlink integradas ao AFFiNE.",
+      "name": "Shell unificado Brainlink",
+      "description": "Navegacao, identidade visual e modulos Brainlink integrados em um unico workspace.",
       "owner": "Brainlink Experience",
       "status": "ACTIVE",
       "progressPercent": 100,
-      "updatedAt": "2026-08-09T17:30:00.000Z"
+      "updatedAt": "2026-08-09T22:00:00.000Z"
     },
     {
       "id": "BL-MOD-AI",
@@ -180,6 +180,26 @@
       "owner": "Brainlink Experience",
       "acceptanceCriteria": "Titulo, textos, atributos, icones e superficies dinamicas apresentam somente Brainlink como produto.",
       "updatedAt": "2026-08-09T21:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-013",
+      "title": "Integrar todos os modulos ao shell nativo do workspace",
+      "moduleId": "BL-MOD-UI",
+      "status": "DONE",
+      "priority": "CRITICAL",
+      "owner": "Brainlink Experience",
+      "acceptanceCriteria": "Brainlink abre dentro do workbench com uma unica barra lateral, sem sidebar ou topbar de aplicativo duplicadas.",
+      "updatedAt": "2026-08-09T22:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-014",
+      "title": "Sincronizar navegacao dos modulos com o historico do workbench",
+      "moduleId": "BL-MOD-UI",
+      "status": "DONE",
+      "priority": "HIGH",
+      "owner": "Brainlink Experience",
+      "acceptanceCriteria": "Projetos, tarefas, roadmap e bugs atualizam conteudo e URL nativa, preservando o modulo selecionado apos recarregar.",
+      "updatedAt": "2026-08-09T22:10:00.000Z"
     }
   ],
   "alerts": [
@@ -242,9 +262,36 @@
       "moduleId": "BL-MOD-BRAND",
       "action": "Aplicar identidade Brainlink no bootstrap e observar toda atualizacao dinamica da interface.",
       "updatedAt": "2026-08-09T21:00:00.000Z"
+    },
+    {
+      "id": "BL-ALERT-007",
+      "title": "Shell e organizacao aparentavam dois softwares",
+      "description": "A rota Brainlink usava sidebar, cabecalho e hierarquia proprios fora do workbench principal.",
+      "severity": "CRITICAL",
+      "status": "RESOLVED",
+      "moduleId": "BL-MOD-UI",
+      "action": "Registrar a rota no workspace, usar a barra lateral nativa e organizar os modulos em quatro categorias no painel ativo.",
+      "updatedAt": "2026-08-09T22:00:00.000Z"
+    },
+    {
+      "id": "BL-ALERT-008",
+      "title": "URL externa nao acompanhava o modulo ativo",
+      "description": "A primeira versao do shell alterava apenas o roteador interno da view e mantinha o endereco em governance.",
+      "severity": "HIGH",
+      "status": "RESOLVED",
+      "moduleId": "BL-MOD-UI",
+      "action": "Encaminhar toda navegacao de modulo ao WorkbenchService.open para sincronizar view, URL e historico.",
+      "updatedAt": "2026-08-09T22:10:00.000Z"
     }
   ],
   "changelog": [
+    {
+      "id": "BL-CHANGE-007",
+      "version": "2.3-dev",
+      "title": "Shell unico de workspace",
+      "description": "Projetos, tarefas, governanca, conhecimento e sistema agora abrem no mesmo workbench e na mesma navegacao principal do Brainlink.",
+      "at": "2026-08-09T22:00:00.000Z"
+    },
     {
       "id": "BL-CHANGE-006",
       "version": "2.2-dev",
@@ -283,6 +330,38 @@
     }
   ],
   "logs": [
+    {
+      "id": "BL-LOG-014",
+      "level": "INFO",
+      "event": "WORKBENCH_MODULE_URL_SYNC_ENABLED",
+      "message": "Navegacao interna passou a usar WorkbenchService.open e preservar o modulo ativo na URL.",
+      "actor": "Codex",
+      "at": "2026-08-09T22:10:00.000Z"
+    },
+    {
+      "id": "BL-LOG-013",
+      "level": "WARN",
+      "event": "MODULE_URL_SYNC_GAP_FOUND",
+      "message": "Projetos e Bug Book renderizaram corretamente, mas a URL externa permaneceu em governance na primeira auditoria.",
+      "actor": "Browser audit",
+      "at": "2026-08-09T22:05:00.000Z"
+    },
+    {
+      "id": "BL-LOG-012",
+      "level": "INFO",
+      "event": "BRAINLINK_NATIVE_WORKSPACE_SHELL_ENABLED",
+      "message": "Rota nativa, item unico na barra lateral e navegacao interna categorizada foram materializados.",
+      "actor": "Codex",
+      "at": "2026-08-09T22:00:00.000Z"
+    },
+    {
+      "id": "BL-LOG-011",
+      "level": "WARN",
+      "event": "DUPLICATE_APPLICATION_SHELL_FOUND",
+      "message": "Auditoria visual confirmou sidebar e topbar Brainlink paralelas ao shell principal do workspace.",
+      "actor": "Browser audit",
+      "at": "2026-08-09T21:55:00.000Z"
+    },
     {
       "id": "BL-LOG-010",
       "level": "INFO",

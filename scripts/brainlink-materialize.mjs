@@ -10,6 +10,7 @@ import { applyAffineLocalAi } from './apply-affine-local-ai.mjs';
 import { applyAffineUiIntegration } from './apply-affine-ui-integration.mjs';
 import { applyAffineWebPostcssFix } from './apply-affine-web-postcss-fix.mjs';
 import { applyBrainlinkBrandUnification } from './apply-brainlink-brand-unification.mjs';
+import { applyBrainlinkWorkspaceShell } from './apply-brainlink-workspace-shell.mjs';
 import { patchBrainlinkPackage } from './brainlink-package-patch.mjs';
 
 const DEFAULTS = Object.freeze({
@@ -280,6 +281,7 @@ export const materializeBrainlink = async options => {
   applyAffineGovernanceBridge({ sourceRoot, targetRoot: target });
   applyAffineLocalAi({ sourceRoot, targetRoot: target });
   applyBrainlinkBrandUnification({ sourceRoot, targetRoot: target });
+  applyBrainlinkWorkspaceShell({ targetRoot: target });
 
   const runtimeEnv = {
     ...process.env,
