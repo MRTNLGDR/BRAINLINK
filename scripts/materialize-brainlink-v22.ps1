@@ -5,6 +5,7 @@ $Target = Join-Path $Root '.brainlink-workspace\AFFiNE'
 $V21 = Join-Path $PSScriptRoot 'materialize-brainlink.ps1'
 $Transform = Join-Path $PSScriptRoot 'apply-execution-v22-safe.mjs'
 $Validate22 = Join-Path $PSScriptRoot 'brainlink-v22-validate.mjs'
+$NonBreakage = Join-Path $PSScriptRoot 'brainlink-nonbreakage-guard.mjs'
 $Doc46 = Join-Path $Root 'docs\46_EXECUTION_ENVELOPES_2026-08-08.md'
 
 function Invoke-Checked([string]$Exe, [string[]]$Args) {
@@ -14,10 +15,14 @@ function Invoke-Checked([string]$Exe, [string[]]$Args) {
 
 if (-not (Test-Path $V21)) { throw 'Missing verified v2.1 materializer.' }
 if (-not (Test-Path $Transform)) { throw 'Missing transport-safe Brainlink v2.2 source migrator.' }
+if (-not (Test-Path $NonBreakage)) { throw 'Missing Brainlink non-breakage guard.' }
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw 'Node.js >=22.12.0 <23.0.0 is required for the v2.2 source migration.' }
 $Version = (& node -p "process.versions.node").Trim()
 $Parts = $Version.Split('.')
 if ([int]$Parts[0] -ne 22 -or [int]$Parts[1] -lt 12) { throw "Node.js $Version is unsupported. Install Node.js >=22.12.0 <23.0.0." }
+
+Write-Host '[BRAINLINK] Enforcing repository non-breakage policy before candidate work...'
+Invoke-Checked node @($NonBreakage, $Root)
 
 Write-Host '[BRAINLINK] Materializing and verifying stable v2.1 base first...'
 & powershell -NoProfile -ExecutionPolicy Bypass -File $V21
@@ -53,4 +58,4 @@ if ($Install) {
 
 Write-Host "[BRAINLINK] Runtime v2.2 candidate materialized at $Target"
 Write-Host '[BRAINLINK] Stable release remains v2.1 until candidate promotion gates pass.'
-Write-Host '[BRAINLINK] Regression: 42/42 | Execution Envelopes: 12/12 | combined structural invariants: 54/54'
+Write-Host '[BRAINLINK] Non-breakage: 9/9 | Regression: 42/42 | Execution Envelopes: 12/12 | combined candidate checks: 63'
