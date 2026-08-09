@@ -118,6 +118,9 @@ export interface BrainlinkAuditEvent {
   detail: string;
   actor: string;
   createdAt: string;
+  sequence?: number;
+  prevHash?: string;
+  eventHash?: string;
 }
 
 export interface BrainlinkSettings {
