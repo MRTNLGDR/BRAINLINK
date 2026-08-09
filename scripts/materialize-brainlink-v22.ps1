@@ -3,6 +3,7 @@ $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 $Target = Join-Path $Root '.brainlink-workspace\AFFiNE'
 $V21 = Join-Path $PSScriptRoot 'materialize-brainlink.ps1'
+$V22Overrides = Join-Path $Root '.brainlink-v22-overrides'
 $Transform = Join-Path $PSScriptRoot 'apply-execution-v22-safe.mjs'
 $Validate22 = Join-Path $PSScriptRoot 'brainlink-v22-validate.mjs'
 $NonBreakage = Join-Path $PSScriptRoot 'brainlink-nonbreakage-guard.mjs'
@@ -14,6 +15,7 @@ function Invoke-Checked([string]$Exe, [string[]]$Args) {
 }
 
 if (-not (Test-Path $V21)) { throw 'Missing verified v2.1 materializer.' }
+if (-not (Test-Path $V22Overrides)) { throw 'Missing isolated Brainlink v2.2 overrides.' }
 if (-not (Test-Path $Transform)) { throw 'Missing transport-safe Brainlink v2.2 source migrator.' }
 if (-not (Test-Path $NonBreakage)) { throw 'Missing Brainlink non-breakage guard.' }
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw 'Node.js >=22.12.0 <23.0.0 is required for the v2.2 source migration.' }
@@ -27,6 +29,11 @@ Invoke-Checked node @($NonBreakage, $Root)
 Write-Host '[BRAINLINK] Materializing and verifying stable v2.1 base first...'
 & powershell -NoProfile -ExecutionPolicy Bypass -File $V21
 if ($LASTEXITCODE -ne 0) { throw 'Brainlink v2.1 base materialization failed.' }
+
+Write-Host '[BRAINLINK] Injecting isolated v2.2-only source files...'
+Get-ChildItem -LiteralPath $V22Overrides -Force | ForEach-Object {
+  Copy-Item -LiteralPath $_.FullName -Destination $Target -Recurse -Force
+}
 
 Write-Host '[BRAINLINK] Applying transport-safe deterministic Execution Envelope v2.2 migration...'
 Invoke-Checked node @($Transform, $Target)
@@ -58,4 +65,4 @@ if ($Install) {
 
 Write-Host "[BRAINLINK] Runtime v2.2 candidate materialized at $Target"
 Write-Host '[BRAINLINK] Stable release remains v2.1 until candidate promotion gates pass.'
-Write-Host '[BRAINLINK] Non-breakage: 9/9 | Regression: 42/42 | Execution Envelopes: 12/12 | combined candidate checks: 63'
+Write-Host '[BRAINLINK] Non-breakage: 11/11 | Regression: 42/42 | Execution Envelopes: 12/12 | stable/candidate sources isolated'
