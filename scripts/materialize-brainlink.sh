@@ -26,7 +26,7 @@ git -C "$TARGET" reset --hard "$EXPECTED"
 git -C "$TARGET" clean -fd
 tar -xzf "$ARCHIVE" -C "$TARGET"
 [[ ! -d "$OVERRIDES" ]] || cp -a "$OVERRIDES"/. "$TARGET"/
-cat "$PATCH_DIR"/app-v2.part*.patch > "$APP_PATCH"
+cat "$PATCH_DIR"/app-v2.linepart*.patch > "$APP_PATCH"
 git -C "$TARGET" apply --whitespace=nowarn "$APP_PATCH"
 (cd "$TARGET" && sha256sum -c "$MANIFEST")
 if [[ "${1:-}" == '--install' ]]; then
