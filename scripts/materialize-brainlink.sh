@@ -8,7 +8,8 @@ OVERRIDES="$ROOT/.brainlink-runtime-overrides"
 PATCH_DIR="$ROOT/.brainlink-patches"
 ARCHIVE="$WORKSPACE_ROOT/brainlink-runtime.tar.gz"
 APP_PATCH="$WORKSPACE_ROOT/brainlink-app-v2.patch"
-AUDIT_PATCH="$PATCH_DIR/audit-v21.patch"
+AUDIT_PATCH_B64="$PATCH_DIR/audit-v21.patch.b64"
+AUDIT_PATCH="$WORKSPACE_ROOT/brainlink-audit-v21.patch"
 MANIFEST="$ROOT/BRAINLINK_RUNTIME_V2.sha256"
 REPO='https://github.com/toeverything/AFFiNE.git'
 TAG='v0.27.0'
@@ -20,7 +21,8 @@ cat "$RUNTIME_DIR"/runtime.part*.b64 | base64 --decode > "$ARCHIVE"
 echo "$OVERLAY_SHA  $ARCHIVE" | sha256sum -c -
 echo "$MANIFEST_SHA  $MANIFEST" | sha256sum -c -
 [[ -d "$PATCH_DIR" ]] || { echo 'Missing Brainlink patch directory' >&2; exit 1; }
-[[ -f "$AUDIT_PATCH" ]] || { echo 'Missing Brainlink audit integrity patch' >&2; exit 1; }
+[[ -f "$AUDIT_PATCH_B64" ]] || { echo 'Missing Brainlink audit integrity patch transport' >&2; exit 1; }
+base64 --decode "$AUDIT_PATCH_B64" > "$AUDIT_PATCH"
 [[ -d "$TARGET/.git" ]] || git clone --depth 1 --branch "$TAG" "$REPO" "$TARGET"
 ACTUAL="$(git -C "$TARGET" rev-parse HEAD)"
 [[ "$ACTUAL" == "$EXPECTED" ]] || { echo "AFFiNE revision mismatch: $ACTUAL" >&2; exit 1; }
