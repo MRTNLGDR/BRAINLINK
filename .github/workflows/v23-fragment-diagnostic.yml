@@ -1,0 +1,36 @@
+name: Brainlink v2.3 Fragment Diagnostic
+
+on:
+  push:
+    branches:
+      - agent/v23-promotion-audit
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fragments:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact branch commit
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Inventory fragments
+        run: |
+          find .brainlink-zip-candidate-v23-runtime -maxdepth 1 -type f -name 'runtime.part*.b64' -print0 \
+            | sort -z -V \
+            | xargs -0 sha256sum \
+            | tee brainlink-v23-fragment-sha256.txt
+      - name: Upload exact checked-out fragments
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: brainlink-v23-published-fragments-${{ github.sha }}
+          path: |
+            .brainlink-zip-candidate-v23-runtime/runtime.part*.b64
+            brainlink-v23-fragment-sha256.txt
+          if-no-files-found: error
+          retention-days: 30
