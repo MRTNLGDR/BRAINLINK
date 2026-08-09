@@ -1,7 +1,9 @@
-// Transport-safety shim for the v2.2 source migrator.
-// The published migrator contains an outer template literal that emits a target
-// template literal using `${field}`. Supplying this exact global binding makes
-// the emitted source contain the intended literal `${field}` instead of
-// attempting to resolve it while constructing the parser block.
+// Transport-safety shim for the historical v2.2 source migrator.
+// The migrator intentionally emits template literals into target TypeScript,
+// but three placeholders were evaluated by the migrator's outer template.
+// These bindings preserve the exact target source text instead of resolving
+// values during migration. The v2.2 validators still verify the generated tree.
 globalThis.field = '${field}';
+globalThis.worker = Object.freeze({ name: '${worker.name}' });
+globalThis.task = Object.freeze({ title: '${task.title}' });
 await import('./apply-execution-v22.mjs');
