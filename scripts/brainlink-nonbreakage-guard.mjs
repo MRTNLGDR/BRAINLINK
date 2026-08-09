@@ -76,11 +76,24 @@ const zipCorpusLine = zipFullManifestText
   .split(/\r?\n/)
   .find(line => line.endsWith('  docs/corpus/v1.0.0/Brainlink_Documentacao_Completa_v1.0.0.zip'));
 const zipCorpusHash = zipCorpusLine?.split(/\s{2}/, 1)[0] ?? '';
+const v22Inactive = (
+  stableLock.brainlink_candidate_release === 'v2.2' &&
+  stableLock.brainlink_candidate_status === 'NOT_PROMOTED'
+) || (
+  stableLock.brainlink_candidate_release === 'v2.3-zip-authority' &&
+  stableLock.brainlink_candidate_status === 'NOT_PROMOTED' &&
+  stableLock.brainlink_superseded_candidate === 'v2.2'
+);
+const stableCandidateHashesMatchAuthority = stableLock.brainlink_candidate_release !== 'v2.3-zip-authority' || (
+  stableLock.brainlink_candidate_runtime_overlay_sha256 === zipLock.candidate_runtime_overlay_sha256 &&
+  stableLock.brainlink_candidate_runtime_manifest_sha256 === zipLock.candidate_runtime_manifest_sha256
+);
 
 check('Stable runtime remains v2.1', stableLock.brainlink_runtime_release === 'v2.1');
-check('v2.2 metadata remains NOT_PROMOTED', stableLock.brainlink_candidate_release === 'v2.2' && stableLock.brainlink_candidate_status === 'NOT_PROMOTED');
+check('v2.2 is inactive or superseded by an unpromoted v2.3 candidate', v22Inactive);
 check('ZIP authority keeps stable runtime at v2.1', zipLock.stable_runtime === 'v2.1');
 check('ZIP-authoritative v2.3 remains NOT_PROMOTED', zipLock.candidate_runtime === 'v2.3-zip-authority' && zipLock.candidate_status === 'NOT_PROMOTED');
+check('AFFiNE lock candidate hashes match ZIP authority lock', stableCandidateHashesMatchAuthority);
 check('Stable setup still uses only v2.1 materializer', stableSetup.includes('scripts\\materialize-brainlink.ps1') && !stableSetup.includes('v22') && !stableSetup.includes('ZIP_CANDIDATE'));
 check('Stable materializers do not reference candidate overlays', !stablePs.includes('.brainlink-v22-overrides') && !stablePs.includes('.brainlink-zip-candidate-v23') && !stableSh.includes('.brainlink-v22-overrides') && !stableSh.includes('.brainlink-zip-candidate-v23'));
 check('v2.2 remains a separate candidate entrypoint', v22Setup.includes('materialize-brainlink-v22.ps1'));
