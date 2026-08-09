@@ -66,7 +66,9 @@ test('mutacao exige token e atualiza tarefa atomicamente', async () => {
   assert.equal(denied.status, 401);
   const accepted = await fetch(`${baseUrl}/api/governance/events`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-brainlink-governance-token': 'test-token' }, body: JSON.stringify({ kind: 'TASK_STATUS', id: 'BL-TASK-008', status: 'DONE' }) });
   assert.equal(accepted.status, 200);
-  assert.equal((await accepted.json()).summary.progressPercent, 100);
+  const mutated = await accepted.json();
+  assert.equal(mutated.tasks.find(task => task.id === 'BL-TASK-008').status, 'DONE');
+  assert.equal(mutated.summary.progressPercent, Math.round((mutated.summary.doneTasks / mutated.summary.totalTasks) * 100));
 });
 
 test('frontend possui todos os gatilhos de sincronizacao e estados explicitos', () => {

@@ -151,6 +151,16 @@
       "owner": "Brainlink Experience",
       "acceptanceCriteria": "A rota /brainlink/projects renderiza, cria projetos e abre detalhes sem ReferenceError.",
       "updatedAt": "2026-08-09T20:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-011",
+      "title": "Tratar chamadas opcionais do AFFiNE ao backend ausente no preview local-only",
+      "moduleId": "BL-MOD-INSTALLER",
+      "status": "TODO",
+      "priority": "MEDIUM",
+      "owner": "Brainlink Core",
+      "acceptanceCriteria": "Iniciar o backend AFFiNE em 3010 quando necessario ou suprimir chamadas cloud opcionais no modo local-only sem afetar CRDT local.",
+      "updatedAt": "2026-08-09T20:05:00.000Z"
     }
   ],
   "alerts": [
@@ -193,6 +203,16 @@
       "moduleId": "BL-MOD-UI",
       "action": "Isolar a substituicao pelo proximo renderer, restaurar renderProjects e manter teste de regressao.",
       "updatedAt": "2026-08-09T20:00:00.000Z"
+    },
+    {
+      "id": "BL-ALERT-005",
+      "title": "Backend AFFiNE opcional indisponivel no preview frontend-only",
+      "description": "Chamadas a /graphql e /api/auth/session sao encaminhadas para localhost:3010 e recebem ECONNREFUSED.",
+      "severity": "MEDIUM",
+      "status": "OPEN",
+      "moduleId": "BL-MOD-INSTALLER",
+      "action": "Definir o perfil local-only sem chamadas cloud ou iniciar o backend AFFiNE junto ao preview quando essas funcoes forem exigidas.",
+      "updatedAt": "2026-08-09T20:05:00.000Z"
     }
   ],
   "changelog": [
@@ -227,6 +247,14 @@
     }
   ],
   "logs": [
+    {
+      "id": "BL-LOG-008",
+      "level": "WARN",
+      "event": "AFFINE_OPTIONAL_BACKEND_UNAVAILABLE",
+      "message": "Proxy registrou ECONNREFUSED para GraphQL e sessao em localhost:3010; rotas Brainlink locais permaneceram operacionais.",
+      "actor": "Server audit",
+      "at": "2026-08-09T20:05:00.000Z"
+    },
     {
       "id": "BL-LOG-007",
       "level": "INFO",
