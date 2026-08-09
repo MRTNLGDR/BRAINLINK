@@ -65,4 +65,4 @@ if ($Install) {
 
 Write-Host "[BRAINLINK] Runtime v2.2 candidate materialized at $Target"
 Write-Host '[BRAINLINK] Stable release remains v2.1 until candidate promotion gates pass.'
-Write-Host '[BRAINLINK] Non-breakage: 11/11 | Regression: 42/42 | Execution Envelopes: 12/12 | stable/candidate sources isolated'
+Write-Host '[BRAINLINK] Non-breakage: 13/13 | Regression: 42/42 | Execution Envelopes: 12/12 | stable/candidate sources isolated'
