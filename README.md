@@ -2,26 +2,143 @@
 
 Brainlink is a governed, local-first knowledge and agent workspace built as a compatibility-preserving layer on top of **AFFiNE v0.27.0**.
 
-The repository pins the exact AFFiNE base in `AFFINE_UPSTREAM.lock`. Runtime delivery is deliberately reproducible and auditable:
+## Source of truth
 
-1. `.brainlink-runtime/` — immutable verified Brainlink base overlay;
-2. `.brainlink-runtime-overrides/` — readable **stable v2.1-only** governance/runtime overrides;
-3. `.brainlink-patches/app-v2.linepart*.patch` — verified UTF-8-safe stable governance patch;
-4. `.brainlink-patches/audit-v21.patch.b64` — transport-safe v2.1 SHA-256 audit-chain patch;
-5. `.brainlink-v22-overrides/` — physically isolated candidate-only Execution Envelope source/tests, never copied by the stable materializer.
+The primary Brainlink product/documentation authority is the user-supplied `Brainlink_Documentacao_Completa_v1.0.0.zip`:
 
-`BRAINLINK_RUNTIME_V2.sha256` verifies the **final stable materialized files**, not merely transport artifacts. `BRAINLINK_SETUP.bat` materializes the full AFFiNE tree into `.brainlink-workspace/AFFiNE`, verifies the pinned upstream revision, base overlay, v2.1 manifest and every final stable runtime file before installing dependencies.
+- SHA-256: `4bce9d511680c70d7cfd51dbc4ef203172a46fa4d10388acd16209fa6b556c09`;
+- 63 archive entries;
+- 56/56 included files validated by the archive's own checksum set.
 
-## Windows quick start — stable
+The ZIP is preserved as source evidence. Corrections are additive: missing referenced artifacts are repaired in versioned canonical/runtime layers with provenance instead of rewriting the source archive. The later Oráculo/COSMETA/Brainlink V5 document is **secondary context only** and cannot override the Brainlink ZIP or silently expand Brainlink into another product.
+
+## AFFiNE foundation
+
+The exact upstream base is pinned in `AFFINE_UPSTREAM.lock`:
+
+- upstream: `toeverything/AFFiNE`;
+- tag: `v0.27.0`;
+- commit: `c61cc6a86f5f8364732296f0bb8393b37e0f70b3`.
+
+Brainlink reuses AFFiNE documents, BlockSuite Canvas, workspace behavior and local-first semantics rather than rebuilding or replacing them.
+
+## Stable runtime — v2.1
+
+The normal production-oriented development baseline remains **v2.1** while the ZIP-authoritative candidate is under promotion testing.
 
 ```bat
 BRAINLINK_SETUP.bat
 BRAINLINK_DEV.bat
 ```
 
-Requirements: Git, PowerShell/Corepack and Node.js `>=22.12.0 <23.0.0`.
+Stable v2.1 includes:
 
-After dependencies are available, the materialized workspace exposes:
+- 39 primary + 5 contextual Brainlink route intents;
+- scoped Universalis/read receipts;
+- worker read gates and error retry gate;
+- fresh-evidence gate for task completion;
+- connector write approval gate;
+- strict v1→v2 local-state migration/import validation;
+- explicit bug-solution verification;
+- Project World, projects, roadmap/tasks, workers, evidence, audit, approvals, connections, archetypes, calendar, settings, superadmin and mobile companion surfaces;
+- secret values excluded from persisted `BrainlinkState`;
+- tamper-evident SHA-256 audit chain with monotonic sequence, `prevHash` and `eventHash`;
+- rejection of altered sealed audit history and no silent audit truncation.
+
+Stable evidence currently records **42/42 structural checks** and **15/15 governance/integrity behavior cases**.
+
+## ZIP-authoritative candidate — v2.3
+
+`v2.3-zip-authority` is the current candidate. It supersedes the earlier v2.2 candidate but **does not replace stable v2.1 yet**.
+
+Windows candidate setup:
+
+```bat
+BRAINLINK_SETUP_ZIP_CANDIDATE.bat
+BRAINLINK_DEV.bat
+```
+
+The candidate materializer is intentionally fail-closed:
+
+1. audits the candidate transport before touching AFFiNE;
+2. reconstructs verified stable v2.1;
+3. rebuilds the compact v2.3 runtime archive from versioned Base64 fragments;
+4. verifies its pinned SHA-256;
+5. applies it over stable;
+6. verifies every final candidate file against `BRAINLINK_ZIP_CANDIDATE_V23_RUNTIME.sha256`;
+7. runs the stable regression validator and the v2.3 validator;
+8. only with `-Install`, performs immutable dependency installation and `brainlink:check`.
+
+The candidate runtime transport is deliberately separate from the documentation corpus:
+
+- 18 ordered transport fragments;
+- 60,911 decoded archive bytes;
+- runtime overlay SHA-256: `72375fababaae6f48037d1a5b072ed18988a8bf6db566f95dcd0426433b5340f`;
+- 30 final runtime files;
+- manifest SHA-256: `79e73c0bb0c18708bdd5fbe3a8c7100e3966b37e4e85440d408df0896830ead0`.
+
+### ZIP-aligned corrections in v2.3
+
+The candidate reconciles the existing implementation with the ZIP instead of discarding working code:
+
+- all **40 canonical `LAW-001..LAW-040` laws**; older conflicting local IDs are preserved as legacy history instead of being silently overwritten;
+- all **11 rule-precedence scopes** from platform safety through incident/error;
+- all **11 rule read-gates**, with receipts scoped to the specific gate;
+- literal **PreTask100**: exactly 100 auditable checks in 10 categories, not 100 hidden LLM loops;
+- immutable per-attempt Execution/Task Envelopes with correlation ID, rule-pack/hash, capabilities, budget, context references, criteria, verifiers, rollback, checkpoints and result/error history;
+- bounded retry/stagnation controls and repeated-error anti-loop enforcement;
+- expanded execution lifecycle;
+- connector write approval bound to exact payload hash and expiry;
+- evidence truth states so `DONE` is not automatically a `VERIFIED` claim;
+- 16 KB structured micro-event payload limit and explicit execution budgets;
+- repaired target OpenAPI, AsyncAPI, MCP, error-code, roadmap, checklist and schema artifacts referenced by the authoritative ZIP;
+- external systems remain explicit boundaries instead of fake integrations.
+
+Candidate evidence records **54/54 ZIP-alignment structural checks**, **35/35 behavior cases**, TypeScript strict core `PASS`, isolated app semantic check `PASS`, and stable **42/42 regression checks** in a clean simulation.
+
+See `docs/evidence/ZIP_CANDIDATE_V23_TRANSPORT_VERIFICATION_2026-08-08.md` and `BRAINLINK_ZIP_AUTHORITY.lock`.
+
+## Why v2.3 is still NOT_PROMOTED
+
+The current execution environment cannot complete the package-registry-dependent release gate. Therefore Brainlink does not claim full production certification yet. Promotion still requires, in an environment with registry access:
+
+- immutable dependency installation;
+- full production build;
+- installed Vitest/integration suites;
+- browser E2E and negative-path tests;
+- accessibility/security checks;
+- backup/import compatibility in the installed app;
+- demonstrated rollback from candidate to stable.
+
+A newer document or a green structural validator cannot bypass these gates.
+
+## Documentation and taxonomy
+
+Documentation is separated from runtime so historical/cumulative material never overwrites AFFiNE technical workspaces or current implementation truth.
+
+- `docs/corpus/v1.0.0/` — authoritative ZIP preservation/reconstruction material;
+- `docs/corpus/v5/` — secondary V5 cross-product context;
+- `docs/canon/` — taxonomy, conflict resolution and effective Brainlink canon;
+- `docs/evidence/` — runtime/materialization/verification evidence.
+
+Version axes are intentionally separate: documentation package version, target-product version, runtime release, state schema and AFFiNE upstream pin are not interchangeable.
+
+## External boundaries — no fake completion
+
+The ZIP specifies several real integrations whose runtimes/credentials/manuals are not present here. They remain explicit `BLOCKED_RUNTIME_INPUT`/adapter boundaries until inspected:
+
+- Ultrabase production schema/migrations/RLS/Storage/Realtime;
+- production MCP transports/servers;
+- Secret Broker/OpenBao;
+- provider credentials and remote notification services;
+- user-machine C:/D: inventory/migration;
+- external vendor builds and runtime license validation.
+
+Brainlink may define contracts for these boundaries, but it does not display them as connected or healthy without a real transport and evidence.
+
+## Verification commands
+
+After dependencies are available in the materialized workspace:
 
 ```bash
 yarn brainlink:validate
@@ -31,81 +148,4 @@ yarn brainlink:dev
 yarn brainlink:build
 ```
 
-## Runtime v2.1 — stable
-
-The local Brainlink governance plane includes:
-
-- 39 primary surfaces + 5 contextual surfaces = **44 route intents**;
-- Universalis laws with version, scope target and lifecycle trigger (`ALWAYS`, `SESSION_START`, `TASK_START`, `TASK_END`, `ON_ERROR`);
-- contextual worker read gates and `ON_ERROR` retry gates;
-- task `DONE` gate requiring fresh evidence from the current execution epoch plus applicable task-end law receipts;
-- Project World/Projects with progress derived from actual task completion;
-- workers, roadmap, evidence, Bug Book, archetypes, calendar, settings, superadmin and mobile companion surfaces;
-- connector metadata without fake live-connection claims;
-- human approval before any connector can move from `READ_ONLY` to `READ_WRITE`;
-- import protection that downgrades unapproved write capability and records the repair in audit;
-- schema-v2 backup validation with v1 migration;
-- explicit bug verification before `SOLVED`;
-- secret values excluded from persisted `BrainlinkState`;
-- a **tamper-evident SHA-256 audit chain** using monotonic sequence, `prevHash` and `eventHash`;
-- verification of sealed audit history on import, one-time sealing of legacy unsealed history, and rejection of altered historical events;
-- no silent audit truncation.
-
-AFFiNE documents and BlockSuite Canvas are reused instead of reimplemented.
-
-## Runtime v2.2 — candidate only
-
-`BRAINLINK_SETUP_V22.bat` is a separate candidate path. It first runs the repository non-breakage guard, then materializes and verifies the stable v2.1 tree. Only after that does it copy `.brainlink-v22-overrides/`, apply the transport-safe Execution Envelope migration and rerun the full v2.1 regression validator plus v2.2-specific invariants.
-
-Execution Envelopes add immutable per-attempt history, frozen TaskEnvelope context, rule-pack/capability/budget snapshots, correlation IDs, lifecycle events and repeated-error anti-loop protection. **v2.2 is not promoted to stable** until its full promotion gate passes. The normal `BRAINLINK_SETUP.bat` remains v2.1.
-
-## V5 context policy
-
-The supplied **Oráculo Master Admin / COSMETA / Brainlink Cumulative V5** is registered as `CONTEXT_COMPLEMENT_ONLY`, not as an automatic runtime migration. Its provenance is pinned in `BRAINLINK_CONTEXT_V5.lock`.
-
-Brainlink keeps its responsibility as the knowledge/governance plane. COSMETA remains an external execution/canvas boundary, Oráculo remains an external execution/admin boundary, and Ultrabase remains the external data-plane boundary when its real runtime/manual is available. V5 features are adopted only when they complement Brainlink without duplicating another product, replacing a source of truth, breaking AFFiNE compatibility or creating fake external integrations.
-
-Run the repository-level guard to verify these invariants:
-
-```bash
-node scripts/brainlink-nonbreakage-guard.mjs
-```
-
-See `docs/47_V5_CONTEXT_ADOPTION_AND_NON_BREAKAGE_2026-08-08.md` for the adoption matrix.
-
-## Verification in this execution
-
-A clean base-overlay simulation applied the same source overrides and patch chain used by the stable setup scripts. Results:
-
-- all **13/13 final-file SHA-256 checks: PASS**;
-- structural validator: **42/42 PASS**;
-- final `app.tsx` SHA-256: `5434d86452f0b1cabc6b3ee612c4ca3ac34223d5763db03649075829151fb6ad`;
-- v2.1 final-file manifest SHA-256: `1d12289e42b613b9e3e284c61240c2ad9aea318700cf89b52afca25587218680`;
-- TypeScript strict check for governance/integrity core: **PASS**;
-- isolated semantic TypeScript check for `app.tsx`: **PASS**;
-- compiled governance/integrity behavior cases: **15/15 PASS**;
-- standard SHA-256 vectors for empty string and `abc`: **PASS**;
-- policy, migration/import and audit-integrity Vitest suites are authored and registered as `brainlink:test`;
-- V5/stable-candidate non-breakage guard: **13/13 PASS**.
-
-The v2.2 Execution Envelope development harness has separately passed **16/16 behavior cases** and **12/12 candidate invariants** in development materialization, while keeping v2.1 as the release baseline.
-
-A full AFFiNE dependency build/browser E2E/accessibility/security suite is not claimed here because this execution host cannot resolve the Yarn/package endpoints; Node `v22.16.0` itself is inside the supported AFFiNE range.
-
-## Documentation truth
-
-The supplied cumulative V4 material was source-audited and inventoried. Runtime-critical canon is versioned directly in this repository, including the runtime, governance-hardening and audit-integrity reports. The V5 single-file source is treated as additional architectural context and is not silently converted into runtime features.
-
-Historical/reference material remains separated from AFFiNE's technical `docs/reference` workspace so Brainlink does not overwrite upstream workspaces or pretend external Ultrabase/MCP/provider integrations exist. Quarantined pre-existing experimental patches are preserved as history and are not silently applied to the stable runtime.
-
-## Provenance
-
-- Upstream: `toeverything/AFFiNE`
-- Tag: `v0.27.0`
-- Commit: `c61cc6a86f5f8364732296f0bb8393b37e0f70b3`
-- Uploaded `AFFINE.zip` SHA-256: `f65b6967dbf2992a4d39f51ddc48fdac04828a47d01599a53ca48cbd0e3b3f47`
-- Brainlink base overlay SHA-256: `1b4e3aa98dd378eb7299e071aa83329643114e40b3e66a378c319613a2a94b8d`
-- Brainlink v2.1 final-file manifest SHA-256: `1d12289e42b613b9e3e284c61240c2ad9aea318700cf89b52afca25587218680`
-- V5 context SHA-256: `7fef02277ce23bd6cf937e8ba5dd12e2f90e756e073179341144f48306cb0d7b`
-
-See `docs/43_RUNTIME_IMPLEMENTATION_REPORT_2026-08-08.md`, `docs/44_GOVERNANCE_HARDENING_2026-08-08.md`, `docs/45_AUDIT_INTEGRITY_2026-08-08.md`, `docs/46_EXECUTION_ENVELOPES_2026-08-08.md`, `docs/47_V5_CONTEXT_ADOPTION_AND_NON_BREAKAGE_2026-08-08.md`, and `docs/evidence/V5_CONTEXT_NON_BREAKAGE_2026-08-08.md`.
+The normal `BRAINLINK_SETUP.bat` always remains the recovery path to stable v2.1 until the candidate promotion gate is completed.
