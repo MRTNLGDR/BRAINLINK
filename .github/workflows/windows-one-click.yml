@@ -16,6 +16,20 @@ on:
       - '.brainlink-runtime-overrides/**'
       - '.brainlink-patches/**'
       - '.github/workflows/windows-one-click.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'BRAINLINK*.bat'
+      - 'AFFINE_UPSTREAM.lock'
+      - 'BRAINLINK_RUNTIME_V2.sha256'
+      - 'scripts/brainlink-*.mjs'
+      - 'scripts/brainlink-bootstrap.ps1'
+      - 'scripts/materialize-brainlink.ps1'
+      - 'scripts/materialize-brainlink.sh'
+      - '.brainlink-runtime/**'
+      - '.brainlink-runtime-overrides/**'
+      - '.brainlink-patches/**'
+      - '.github/workflows/windows-one-click.yml'
 
 permissions:
   contents: read
