@@ -1,4 +1,5 @@
 @echo off
+rem Verification branch: execute the integrated Windows stable release gate through the public BAT.
 setlocal EnableExtensions
 cd /d "%~dp0"
 title BRAINLINK - ONE CLICK
