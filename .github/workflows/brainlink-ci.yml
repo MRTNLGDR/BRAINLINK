@@ -39,6 +39,32 @@ jobs:
       - name: Verify repository invariants and candidate isolation
         run: node scripts/brainlink-nonbreakage-guard.mjs
 
+  transport-audit-v23:
+    name: Strict ZIP-authoritative v2.3 transport audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pinned workflow source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Reconstruct and audit compact runtime transport
+        run: node scripts/brainlink-audit-v23-transport.mjs --output=brainlink-v23-transport-audit.json
+      - name: Upload transport audit evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: brainlink-v23-transport-audit-${{ github.sha }}
+          path: brainlink-v23-transport-audit.json
+          if-no-files-found: error
+          retention-days: 90
+
   stable-runtime:
     name: Stable v2.1 materialize, install and test
     needs: repository-guards
@@ -103,7 +129,9 @@ jobs:
 
   candidate-v23:
     name: ZIP-authoritative candidate v2.3 install and test
-    needs: repository-guards
+    needs:
+      - repository-guards
+      - transport-audit-v23
     runs-on: ubuntu-24.04
     timeout-minutes: 50
     steps:
@@ -201,6 +229,7 @@ jobs:
     if: ${{ always() }}
     needs:
       - repository-guards
+      - transport-audit-v23
       - stable-runtime
       - candidate-v22
       - candidate-v23
@@ -210,7 +239,7 @@ jobs:
     timeout-minutes: 10
     env:
       BRAINLINK_JOB_RESULTS: >-
-        {"repository-guards":"${{ needs.repository-guards.result }}","stable-runtime":"${{ needs.stable-runtime.result }}","candidate-v22":"${{ needs.candidate-v22.result }}","candidate-v23":"${{ needs.candidate-v23.result }}","stable-build":"${{ needs.stable-build.result }}","candidate-v23-build":"${{ needs.candidate-v23-build.result }}"}
+        {"repository-guards":"${{ needs.repository-guards.result }}","transport-audit-v23":"${{ needs.transport-audit-v23.result }}","stable-runtime":"${{ needs.stable-runtime.result }}","candidate-v22":"${{ needs.candidate-v22.result }}","candidate-v23":"${{ needs.candidate-v23.result }}","stable-build":"${{ needs.stable-build.result }}","candidate-v23-build":"${{ needs.candidate-v23-build.result }}"}
     steps:
       - name: Checkout exact tested commit
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
