@@ -24,6 +24,28 @@ const pkg = JSON.parse(read('package.json'));
 
 const screenIds = [...catalog.matchAll(/id: 'BL-UI-(\d+)'/g)].map(match => match[1]);
 const contextual = [...catalog.matchAll(/'Global Search and Command Palette'|'Document Inspector'|'Project Detail'|'Task Detail'|'Worker Detail'/g)];
+const expectedLockValues = {
+  devDependencies: {
+    '@capacitor/cli': '^7.6.5',
+    '@vitest/browser': '^4.1.8',
+    '@vitest/coverage-istanbul': '^4.1.8',
+    '@vitest/ui': '^4.1.8',
+    oxlint: '1.68.0',
+    vitest: '^4.1.8',
+  },
+  resolutions: {
+    '@opentelemetry/core': '^2.8.0',
+    '@opentelemetry/resources': '^2.8.0',
+    '@opentelemetry/sdk-trace-base': '^2.8.0',
+    '@tootallnate/once': '^2.0.1',
+    'js-yaml@npm:^4.1.0': '^4.2.0',
+    'js-yaml@npm:4.1.1': '^4.2.0',
+    tar: '^7.5.16',
+  },
+};
+const lockCompatible = Object.entries(expectedLockValues).every(([section, entries]) =>
+  Object.entries(entries).every(([name, version]) => pkg[section]?.[name] === version)
+);
 
 assert('Brainlink app exists', exists('packages/frontend/core/src/brainlink/app.tsx'));
 assert('Desktop route registered', desktopRouter.includes("path: '/brainlink/*'"));
@@ -63,8 +85,11 @@ assert('Backup import uses strict parser', app.includes('parseBrainlinkState(JSO
 assert('State schema v2 implemented', types.includes('schemaVersion: 2') && store.includes('schemaVersion: 2'));
 assert('Legacy v1 migration implemented', store.includes('BRAINLINK_LEGACY_STORAGE_KEYS') && store.includes('STATE_MIGRATED'));
 assert('No secret value field in state model', !types.includes('secretValue'));
-assert('AFFiNE technical workspace identity preserved', pkg.name === '@affine/monorepo');
+assert('AFFiNE technical workspace identity preserved', pkg.name === '@affine/monorepo' && pkg.version === '0.27.0');
+assert('Pinned Node and Yarn contract preserved', pkg.engines?.node === '>=22.12.0 <23.0.0' && pkg.packageManager === 'yarn@4.13.0');
+assert('AFFiNE lock-sensitive dependency graph preserved', lockCompatible);
 assert('Brainlink scripts registered', Boolean(pkg.scripts?.['brainlink:dev'] && pkg.scripts?.['brainlink:build'] && pkg.scripts?.['brainlink:validate']));
+assert('Brainlink web scripts target real AFFiNE web app', pkg.scripts?.['brainlink:dev'] === 'yarn affine web dev' && pkg.scripts?.['brainlink:build'] === 'yarn affine web build');
 assert('Brainlink targeted test/check scripts registered', Boolean(pkg.scripts?.['brainlink:test'] && pkg.scripts?.['brainlink:check']));
 assert('Runtime governance canon preserved', exists('docs/43_RUNTIME_IMPLEMENTATION_REPORT_2026-08-08.md') && exists('docs/44_GOVERNANCE_HARDENING_2026-08-08.md'));
 
