@@ -55,7 +55,7 @@ if (Test-Path $Overrides) {
   }
 }
 
-$PatchText = (Get-ChildItem (Join-Path $PatchDir 'app-v2.part*.patch') | Sort-Object Name | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
+$PatchText = (Get-ChildItem (Join-Path $PatchDir 'app-v2.linepart*.patch') | Sort-Object Name | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
 [IO.File]::WriteAllText($AppPatch, $PatchText, [Text.UTF8Encoding]::new($false))
 Invoke-Checked git @('-C',$Target,'apply','--whitespace=nowarn',$AppPatch)
 
