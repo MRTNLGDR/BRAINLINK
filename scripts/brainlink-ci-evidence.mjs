@@ -23,7 +23,7 @@ const parseLock = content => Object.fromEntries(
 const isSha256 = value => /^[0-9a-f]{64}$/.test(value ?? '');
 
 const jobs = JSON.parse(process.env.BRAINLINK_JOB_RESULTS ?? '{}');
-const requiredStableJobs = ['repository-guards', 'stable-runtime', 'stable-build'];
+const requiredStableJobs = ['repository-guards', 'stable-runtime', 'stable-build', 'windows-one-click'];
 const candidateJobs = ['transport-audit-v23', 'candidate-v22', 'candidate-v23', 'candidate-v23-build'];
 const stableFailures = requiredStableJobs.filter(name => jobs[name] !== 'success');
 const stableLock = parseLock(read('AFFINE_UPSTREAM.lock'));
@@ -50,6 +50,7 @@ const releaseInvariants = {
     stableLock.brainlink_zip_candidate_release === 'v2.3-zip-authority' &&
     ['NOT_PROMOTED', 'BLOCKED_CORRUPT_TRANSPORT'].includes(stableLock.brainlink_zip_candidate_status),
   zipCandidateGoverned: candidateGovernance,
+  windowsUserPathVerified: jobs['windows-one-click'] === 'success',
   allStableJobsSucceeded: stableFailures.length === 0,
 };
 const releaseGate = Object.values(releaseInvariants).every(Boolean) ? 'PASS' : 'FAIL';
@@ -60,7 +61,7 @@ const candidateGate = zipBlocked
     : 'FAIL';
 
 const evidence = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   kind: 'BRAINLINK_GITHUB_ACTIONS_RELEASE_EVIDENCE',
   generatedAt: new Date().toISOString(),
   source: {
@@ -102,6 +103,9 @@ const evidence = {
     zipCandidateFullManifest: hashFile('BRAINLINK_ZIP_CANDIDATE_V23.sha256'),
     zipCandidateRuntimeManifest: hashFile('BRAINLINK_ZIP_CANDIDATE_V23_RUNTIME.sha256'),
     nonbreakageGuard: hashFile('scripts/brainlink-nonbreakage-guard.mjs'),
+    installerValidator: hashFile('scripts/brainlink-installer-validate.mjs'),
+    stableMaterializer: hashFile('scripts/brainlink-materialize.mjs'),
+    auditTransform: hashFile('scripts/apply-audit-v21.mjs'),
     strictTransportAuditor: hashFile('scripts/brainlink-audit-v23-transport.mjs'),
     candidateStateAuditor: hashFile('scripts/brainlink-audit-v23-state.mjs'),
     evidenceGenerator: hashFile('scripts/brainlink-ci-evidence.mjs'),
