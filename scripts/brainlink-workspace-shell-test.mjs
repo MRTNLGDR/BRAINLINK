@@ -16,7 +16,8 @@ check('Duplicate Brainlink sidebar is not rendered', !app.includes('<aside class
 check('Workbench exposes the Brainlink module route', router.includes("path: '/brainlink/*'") && router.includes("workspace/brainlink/index"));
 check('Workspace route renders the real Brainlink application', page.includes("from '../../../../brainlink/app'") && page.includes('navigateInWorkspace={target => workbench.open(target)}'));
 check('Module navigation synchronizes the active workbench URL', app.includes('const navigatePath = (target: string) => navigateInWorkspace ? navigateInWorkspace(target) : navigate(target);') && app.includes('navigatePath(result.path)'));
-check('Root sidebar uses native workbench navigation', sidebar.includes('const BrainlinkButton = () =>') && sidebar.includes("to={'/brainlink/governance'}") && !sidebar.includes("navigate('/brainlink/governance')"));
+check('Workspace toolbar exposes the current organization domains', app.includes("{ label: 'Home', slug: 'organization' }") && app.includes("{ label: 'Life', slug: 'life' }") && app.includes("{ label: 'Brains', slug: 'brains' }"));
+check('Root sidebar uses native workbench navigation', sidebar.includes('const BrainlinkButton = () =>') && sidebar.includes("to={'/brainlink/organization'}") && !sidebar.includes("navigate('/brainlink/organization')"));
 
 for (const result of checks) console.log(`${result.ok ? 'PASS' : 'FAIL'}  ${result.name}`);
 const passed = checks.filter(result => result.ok).length;

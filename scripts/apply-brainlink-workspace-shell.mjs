@@ -127,9 +127,9 @@ const NATIVE_STYLES = String.raw`
 `;
 
 const NATIVE_SHELL = String.raw`  const navigationScreens = BRAINLINK_SCREENS.filter(item => mobileSurface ? item.area === 'MOBILE' : item.area !== 'MOBILE');
-  const operationSlugs = new Set(['governance', 'projects', 'roadmap', 'tasks']);
-  const knowledgeSlugs = new Set(['world', 'documents', 'canvas', 'calendar']);
-  const governanceSlugs = new Set(['universalis', 'workers', 'bug-book', 'archetypes']);
+  const operationSlugs = new Set(['organization', 'projects', 'company', 'budget', 'people', 'roadmap', 'tasks']);
+  const knowledgeSlugs = new Set(['life', 'ideas', 'world', 'documents', 'canvas', 'calendar']);
+  const governanceSlugs = new Set(['brains', 'universalis', 'workers', 'governance', 'bug-book', 'archetypes']);
   const moduleGroups = [
     { label: 'Operation', items: navigationScreens.filter(item => operationSlugs.has(item.slug)) },
     { label: 'Knowledge', items: navigationScreens.filter(item => knowledgeSlugs.has(item.slug)) },
@@ -144,11 +144,13 @@ const NATIVE_SHELL = String.raw`  const navigationScreens = BRAINLINK_SCREENS.fi
         { label: 'Evidence', slug: 'evidence' },
       ]
     : [
-        { label: 'Overview', slug: 'governance' },
+        { label: 'Home', slug: 'organization' },
+        { label: 'Life', slug: 'life' },
+        { label: 'Ideas', slug: 'ideas' },
         { label: 'Projects', slug: 'projects' },
-        { label: 'Tasks', slug: 'tasks' },
-        { label: 'Roadmap', slug: 'roadmap' },
-        { label: 'Bugs', slug: 'bug-book' },
+        { label: 'Company', slug: 'company' },
+        { label: 'Budget', slug: 'budget' },
+        { label: 'Brains', slug: 'brains' },
       ];
 
   const renderModuleItems = (items: typeof navigationScreens) => items.map(item => (
@@ -220,18 +222,16 @@ const patchApp = targetRoot => {
     "onClick={() => { navigate(result.path); setSearch(''); }}",
     "onClick={() => { navigatePath(result.path); setSearch(''); }}"
   );
-  if (!source.includes(UI_MARKER)) {
-    if (!source.includes(STYLE_MARKER)) {
-      const animationAnchor = '  @keyframes bl-page-in';
-      if (!source.includes(animationAnchor)) throw new Error('Brainlink native shell style anchor is missing.');
-      source = source.replace(animationAnchor, `${NATIVE_STYLES}\n${animationAnchor}`);
-    }
-    source = source.replace('  :root {', '  .bl-shell, .bl-native-shell {');
-    const shellStart = source.indexOf(SHELL_START);
-    const componentEnd = source.lastIndexOf('\n};');
-    if (shellStart < 0 || componentEnd <= shellStart) throw new Error('Brainlink native shell component anchors are invalid.');
-    source = source.slice(0, shellStart) + NATIVE_SHELL + source.slice(componentEnd);
+  if (!source.includes(STYLE_MARKER)) {
+    const animationAnchor = '  @keyframes bl-page-in';
+    if (!source.includes(animationAnchor)) throw new Error('Brainlink native shell style anchor is missing.');
+    source = source.replace(animationAnchor, `${NATIVE_STYLES}\n${animationAnchor}`);
   }
+  source = source.replace('  :root {', '  .bl-shell, .bl-native-shell {');
+  const shellStart = source.indexOf(SHELL_START);
+  const componentEnd = source.lastIndexOf('\n};');
+  if (shellStart < 0 || componentEnd <= shellStart) throw new Error('Brainlink native shell component anchors are invalid.');
+  source = source.slice(0, shellStart) + NATIVE_SHELL + source.slice(componentEnd);
   writeIfChanged(file, source);
   return file;
 };
@@ -268,6 +268,8 @@ const patchRootSidebar = targetRoot => {
     if (!source.includes(anchor)) throw new Error('Root sidebar AI navigation anchor is missing.');
     source = source.replace(anchor, `${anchor}\n        <BrainlinkButton />`);
   }
+  source = source.replace("to={'/brainlink/governance'}", "to={'/brainlink/organization'}");
+  source = source.replace(/<span data-testid="ai-chat">[\s\S]*?<\/span>/, '<span data-testid="ai-chat">Brain</span>');
   writeIfChanged(file, source);
   return file;
 };

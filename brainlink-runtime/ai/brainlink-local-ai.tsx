@@ -141,7 +141,7 @@ const readConfig = (): ProviderConfig => {
 };
 
 const providerLabel = (kind: ProviderKind) => ({
-  internal: 'Brainlink Internal',
+  internal: 'Brain Internal',
   openrouter: 'OpenRouter',
 })[kind];
 
@@ -287,7 +287,7 @@ export const BrainlinkLocalAI = () => {
     if (!apiKey.trim()) throw new Error('Enter an OpenRouter API key for this session.');
     const context = sourceContext(sources);
     const system = [
-      'You are Brainlink Local AI running inside an AFFiNE workspace.',
+      'You are Brain, the local intelligence of the Brainlink workspace.',
       'Use only the supplied local documentation context for factual claims.',
       'Cite document titles in square brackets. Say when evidence is insufficient.',
       'Help improve documentation, summarize, find contradictions and propose actionable edits.',
@@ -413,11 +413,11 @@ export const BrainlinkLocalAI = () => {
   return (
     <>
       <style>{styles}</style>
-      <ViewTitle title="Brainlink AI" />
+      <ViewTitle title="Brain" />
       <ViewIcon icon="ai" />
       <ViewHeader>
         <div className="bl-ai-header">
-          <div className="bl-ai-header-copy"><strong>Brainlink AI</strong><span className="bl-ai-status" data-state={providerState}>{providerDetail}</span></div>
+          <div className="bl-ai-header-copy"><strong>Brain</strong><span className="bl-ai-status" data-state={providerState}>{providerDetail}</span></div>
           <div className="bl-ai-header-actions">
             <button className="bl-ai-button" onClick={() => void reindex()} disabled={indexing}>{indexing ? 'Indexing' : 'Reindex docs'}</button>
             <button className="bl-ai-button" onClick={() => setSettingsOpen(value => !value)}>{settingsOpen ? 'Hide providers' : 'Providers'}</button>
@@ -430,14 +430,14 @@ export const BrainlinkLocalAI = () => {
             <section className="bl-ai-chat">
               <div className="bl-ai-messages">
                 {messages.length === 0 ? <div className="bl-ai-welcome">
-                  <div className="bl-ai-mark">BL</div>
-                  <h1>Ask your workspace</h1>
-                  <p>Internal AI for AFFiNE documentation. Reading, indexing and evidence retrieval run in a browser worker. OpenRouter is optional and never used without consent.</p>
+                  <div className="bl-ai-mark">B</div>
+                  <h1>Ask Brain</h1>
+                  <p>Brain reads the real Brainlink documentation. Indexing, retrieval and evidence synthesis run in a local browser worker. OpenRouter is optional and never used without consent.</p>
                   <div className="bl-ai-suggestions">{suggestions.map(suggestion => <button className="bl-ai-suggestion" key={suggestion} onClick={() => void send(suggestion)}>{suggestion}</button>)}</div>
                 </div> : messages.map(message => <article className="bl-ai-message" data-role={message.role} key={message.id}>
                   <div className="bl-ai-avatar">{message.role === 'assistant' ? 'BL' : 'YOU'}</div>
                   <div className="bl-ai-message-copy">
-                    <div className="bl-ai-message-meta"><strong>{message.role === 'assistant' ? 'Brainlink AI' : 'You'}</strong><span>{message.engine ?? 'Local workspace'}</span></div>
+                    <div className="bl-ai-message-meta"><strong>{message.role === 'assistant' ? 'Brain' : 'You'}</strong><span>{message.engine ?? 'Local workspace'}</span></div>
                     <div className="bl-ai-message-text">{message.content || (busy ? 'Reading local documentation...' : '')}</div>
                     {message.sources?.length ? <div className="bl-ai-sources">{message.sources.map(source => <span className="bl-ai-source" key={source.id} title={source.text}>[{source.title}]</span>)}</div> : null}
                   </div>
@@ -457,7 +457,7 @@ export const BrainlinkLocalAI = () => {
             </section>
 
             {settingsOpen ? <aside className="bl-ai-settings">
-              <h2>AI providers</h2>
+              <h2>Brain providers</h2>
               <p>Brainlink Internal is the default and uses no network. OpenRouter is the only optional external provider.</p>
               <div className="bl-ai-panel">
                 <h3>Inference</h3>
@@ -467,7 +467,7 @@ export const BrainlinkLocalAI = () => {
                 {config.kind === 'openrouter' ? <label className="bl-ai-toggle"><input type="checkbox" checked={config.allowExternal} onChange={event => setConfig(previous => ({ ...previous, allowExternal: event.target.checked }))} /><span>Allow selected evidence to be sent to OpenRouter. Raw workspace documents remain in the internal index.</span></label> : null}
               </div>
               <div className="bl-ai-panel">
-                <h3>Brainlink Internal Engine</h3>
+                <h3>Brain Local Engine</h3>
                 <div className="bl-ai-metrics"><div className="bl-ai-metric"><strong>{indexStats.documents}</strong><span>docs</span></div><div className="bl-ai-metric"><strong>{indexStats.chunks}</strong><span>chunks</span></div><div className="bl-ai-metric"><strong>{indexStats.terms}</strong><span>terms</span></div></div>
                 <div className="bl-ai-notice">BM25 indexing, evidence ranking and extractive synthesis run inside a dedicated browser worker. No model server or local daemon is required.</div>
               </div>

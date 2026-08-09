@@ -1,17 +1,17 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-08-09T22:10:00.000Z",
+  "generatedAt": "2026-08-09T23:00:00.000Z",
   "state": "READY",
   "summary": {
-    "totalModules": 5,
-    "activeModules": 5,
-    "totalTasks": 14,
-    "doneTasks": 12,
+    "totalModules": 6,
+    "activeModules": 6,
+    "totalTasks": 21,
+    "doneTasks": 19,
     "pendingTasks": 2,
     "blockedTasks": 0,
     "openAlerts": 2,
-    "documents": 5,
-    "progressPercent": 86
+    "documents": 6,
+    "progressPercent": 90
   },
   "modules": [
     {
@@ -58,6 +58,15 @@
       "status": "ACTIVE",
       "progressPercent": 100,
       "updatedAt": "2026-08-09T18:00:00.000Z"
+    },
+    {
+      "id": "BL-MOD-ORGANIZATION",
+      "name": "Brainlink Operating System",
+      "description": "Organizacao integrada de vida, ideias, projetos, empresa, pessoas, orcamento, tarefas, documentos e Brains.",
+      "owner": "Brainlink Experience",
+      "status": "ACTIVE",
+      "progressPercent": 100,
+      "updatedAt": "2026-08-09T23:00:00.000Z"
     }
   ],
   "tasks": [
@@ -200,6 +209,76 @@
       "owner": "Brainlink Experience",
       "acceptanceCriteria": "Projetos, tarefas, roadmap e bugs atualizam conteudo e URL nativa, preservando o modulo selecionado apos recarregar.",
       "updatedAt": "2026-08-09T22:10:00.000Z"
+    },
+    {
+      "id": "BL-TASK-015",
+      "title": "Modelar dominios de organizacao total",
+      "moduleId": "BL-MOD-ORGANIZATION",
+      "status": "DONE",
+      "priority": "CRITICAL",
+      "owner": "Brainlink Experience",
+      "acceptanceCriteria": "Vida, ideias, projetos, empresa, orcamento, pessoas e Brains possuem rotas e registros persistentes.",
+      "updatedAt": "2026-08-09T23:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-016",
+      "title": "Conectar organizacao a documentos reais do workspace",
+      "moduleId": "BL-MOD-ORGANIZATION",
+      "status": "DONE",
+      "priority": "CRITICAL",
+      "owner": "Brainlink Knowledge",
+      "acceptanceCriteria": "Itens selecionam e abrem documentos reais e exibem gap quando a fonte documental estiver ausente.",
+      "updatedAt": "2026-08-09T23:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-017",
+      "title": "Expor atividade real e heartbeat dos Workers",
+      "moduleId": "BL-MOD-ORGANIZATION",
+      "status": "DONE",
+      "priority": "CRITICAL",
+      "owner": "Brainlink Intelligence",
+      "acceptanceCriteria": "Cada Brain mostra tarefa, projeto, atividade registrada, heartbeat, evidencias e estado atual.",
+      "updatedAt": "2026-08-09T23:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-018",
+      "title": "Implementar conformidade de documentacao por Brain",
+      "moduleId": "BL-MOD-ORGANIZATION",
+      "status": "DONE",
+      "priority": "CRITICAL",
+      "owner": "Brainlink Governance",
+      "acceptanceCriteria": "Documentos e regras obrigatorias geram recibos e percentual de conformidade visivel.",
+      "updatedAt": "2026-08-09T23:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-019",
+      "title": "Consolidar a IA local como Brain",
+      "moduleId": "BL-MOD-AI",
+      "status": "DONE",
+      "priority": "HIGH",
+      "owner": "Brainlink Intelligence",
+      "acceptanceCriteria": "Navegacao, titulo, chat e respostas apresentam Brain como inteligencia do Brainlink.",
+      "updatedAt": "2026-08-09T23:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-020",
+      "title": "Materializar e testar o sistema organizacional",
+      "moduleId": "BL-MOD-INSTALLER",
+      "status": "DONE",
+      "priority": "HIGH",
+      "owner": "Brainlink Core",
+      "acceptanceCriteria": "Instalacoes futuras recebem organizador, Brain, rotas, documentacao e gates automaticamente.",
+      "updatedAt": "2026-08-09T23:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-021",
+      "title": "Atualizar shell materializado quando a taxonomia evoluir",
+      "moduleId": "BL-MOD-INSTALLER",
+      "status": "DONE",
+      "priority": "HIGH",
+      "owner": "Brainlink Core",
+      "acceptanceCriteria": "Reaplicar o transformador substitui a navegacao antiga e publica Home, Life, Ideas, Company, Budget e Brains.",
+      "updatedAt": "2026-08-09T23:10:00.000Z"
     }
   ],
   "alerts": [
@@ -282,9 +361,36 @@
       "moduleId": "BL-MOD-UI",
       "action": "Encaminhar toda navegacao de modulo ao WorkbenchService.open para sincronizar view, URL e historico.",
       "updatedAt": "2026-08-09T22:10:00.000Z"
+    },
+    {
+      "id": "BL-ALERT-009",
+      "title": "Organizacao fragmentada entre modulos tecnicos",
+      "description": "Vida, ideias, empresa, pessoas e orcamento ainda nao formavam um sistema conectado a documentos e Workers.",
+      "severity": "CRITICAL",
+      "status": "RESOLVED",
+      "moduleId": "BL-MOD-ORGANIZATION",
+      "action": "Criar ontologia visual unificada, persistencia local, fontes documentais reais e observabilidade dos Brains.",
+      "updatedAt": "2026-08-09T23:00:00.000Z"
+    },
+    {
+      "id": "BL-ALERT-010",
+      "title": "Shell materializado reteve atalhos da taxonomia anterior",
+      "description": "O primeiro preview do organizador exibiu o conteudo novo com os atalhos Overview, Tasks, Roadmap e Bugs da versao anterior.",
+      "severity": "HIGH",
+      "status": "RESOLVED",
+      "moduleId": "BL-MOD-INSTALLER",
+      "action": "Tornar a substituicao do shell idempotente e validar os atalhos atuais em cada aplicacao.",
+      "updatedAt": "2026-08-09T23:10:00.000Z"
     }
   ],
   "changelog": [
+    {
+      "id": "BL-CHANGE-008",
+      "version": "2.4-dev",
+      "title": "Brainlink Operating System",
+      "description": "Vida, ideias, projetos, empresa, pessoas, orcamento, tarefas, documentos e Brains agora compartilham organizacao e execucao visual.",
+      "at": "2026-08-09T23:00:00.000Z"
+    },
     {
       "id": "BL-CHANGE-007",
       "version": "2.3-dev",
@@ -330,6 +436,38 @@
     }
   ],
   "logs": [
+    {
+      "id": "BL-LOG-018",
+      "level": "INFO",
+      "event": "WORKSPACE_TAXONOMY_REFRESH_ENABLED",
+      "message": "Transformador do shell agora reaplica a taxonomia atual e o gate verifica Home, Life e Brains.",
+      "actor": "Codex",
+      "at": "2026-08-09T23:10:00.000Z"
+    },
+    {
+      "id": "BL-LOG-017",
+      "level": "WARN",
+      "event": "STALE_WORKSPACE_TOOLBAR_FOUND",
+      "message": "Preview exibiu organizador atualizado com barra de atalhos da versao anterior.",
+      "actor": "Browser audit",
+      "at": "2026-08-09T23:05:00.000Z"
+    },
+    {
+      "id": "BL-LOG-016",
+      "level": "INFO",
+      "event": "BRAINLINK_OPERATING_SYSTEM_ENABLED",
+      "message": "Organizador total, documentos reais, Brain e observabilidade de Workers foram materializados.",
+      "actor": "Codex",
+      "at": "2026-08-09T23:00:00.000Z"
+    },
+    {
+      "id": "BL-LOG-015",
+      "level": "WARN",
+      "event": "ORGANIZATION_FRAGMENTATION_FOUND",
+      "message": "Auditoria de produto identificou ausencia de ontologia visual para vida, ideias, empresa, pessoas e orcamento.",
+      "actor": "Product audit",
+      "at": "2026-08-09T22:45:00.000Z"
+    },
     {
       "id": "BL-LOG-014",
       "level": "INFO",
@@ -436,6 +574,14 @@
     }
   ],
   "documents": [
+    {
+      "id": "BL-DOC-006",
+      "title": "Brainlink Operating System",
+      "kind": "ARCHITECTURE",
+      "path": "docs/BRAINLINK_OPERATING_SYSTEM.md",
+      "status": "CURRENT",
+      "updatedAt": "2026-08-09T23:00:00.000Z"
+    },
     {
       "id": "BL-DOC-005",
       "title": "Identidade unificada Brainlink",
