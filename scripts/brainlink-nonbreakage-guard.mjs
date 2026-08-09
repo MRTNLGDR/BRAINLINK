@@ -17,6 +17,14 @@ const parseLock = content => Object.fromEntries(
       return separator < 0 ? [line, ''] : [line.slice(0, separator), line.slice(separator + 1)];
     })
 );
+const isSha256 = value => /^[0-9a-f]{64}$/.test(value ?? '');
+const transportPartPattern = /^runtime\.part(\d+)([a-z]*)\.b64$/;
+const sortTransportParts = names => names.sort((left, right) => {
+  const leftMatch = left.match(transportPartPattern);
+  const rightMatch = right.match(transportPartPattern);
+  const numberDelta = Number(leftMatch?.[1]) - Number(rightMatch?.[1]);
+  return numberDelta || String(leftMatch?.[2]).localeCompare(String(rightMatch?.[2]));
+});
 
 const failures = [];
 const checks = [];
@@ -27,12 +35,11 @@ const check = (name, condition, detail = '') => {
   if (!ok) failures.push(name);
 };
 
-const stableLockText = read('AFFINE_UPSTREAM.lock');
-const stableLock = parseLock(stableLockText);
-const zipLockText = read('BRAINLINK_ZIP_AUTHORITY.lock');
-const zipLock = parseLock(zipLockText);
+const stableLock = parseLock(read('AFFINE_UPSTREAM.lock'));
+const zipLock = parseLock(read('BRAINLINK_ZIP_AUTHORITY.lock'));
 const stableManifestText = read('BRAINLINK_RUNTIME_V2.sha256');
-const zipManifestText = read('BRAINLINK_ZIP_CANDIDATE_V23.sha256');
+const zipFullManifestText = read('BRAINLINK_ZIP_CANDIDATE_V23.sha256');
+const zipRuntimeManifestText = read('BRAINLINK_ZIP_CANDIDATE_V23_RUNTIME.sha256');
 const stableSetup = read('BRAINLINK_SETUP.bat');
 const v22Setup = exists('BRAINLINK_SETUP_V22.bat') ? read('BRAINLINK_SETUP_V22.bat') : '';
 const v23Setup = exists('BRAINLINK_SETUP_ZIP_CANDIDATE.bat') ? read('BRAINLINK_SETUP_ZIP_CANDIDATE.bat') : '';
@@ -48,19 +55,24 @@ const stableExecution = '.brainlink-runtime-overrides/packages/frontend/core/src
 const stableExecutionTest = '.brainlink-runtime-overrides/packages/frontend/core/src/brainlink/__tests__/execution.spec.ts';
 const candidateExecution = '.brainlink-v22-overrides/packages/frontend/core/src/brainlink/execution.ts';
 const candidateExecutionTest = '.brainlink-v22-overrides/packages/frontend/core/src/brainlink/__tests__/execution.spec.ts';
-const zipPartsDir = '.brainlink-zip-candidate-v23';
-const zipPartNames = exists(zipPartsDir)
-  ? fs.readdirSync(absolute(zipPartsDir)).filter(name => /^runtime\.part.*\.b64$/.test(name)).sort()
+const zipRuntimePartsDir = '.brainlink-zip-candidate-v23-runtime';
+const zipPartNames = exists(zipRuntimePartsDir)
+  ? sortTransportParts(fs.readdirSync(absolute(zipRuntimePartsDir)).filter(name => transportPartPattern.test(name)))
   : [];
-let zipOverlayHash = '';
+let zipRuntimeArchiveHash = '';
 let zipOverlayDecodeError = '';
 try {
-  const encoded = zipPartNames.map(name => read(path.posix.join(zipPartsDir, name))).join('').replace(/\s+/g, '');
-  zipOverlayHash = encoded ? sha256(Buffer.from(encoded, 'base64')) : '';
+  const encoded = zipPartNames
+    .map(name => read(path.posix.join(zipRuntimePartsDir, name)))
+    .join('')
+    .replace(/\s+/g, '');
+  const decoded = encoded ? Buffer.from(encoded, 'base64') : Buffer.alloc(0);
+  if (decoded.length && (decoded[0] !== 0x1f || decoded[1] !== 0x8b)) throw new Error('decoded transport lacks gzip magic');
+  zipRuntimeArchiveHash = decoded.length ? sha256(decoded) : '';
 } catch (error) {
   zipOverlayDecodeError = error instanceof Error ? error.message : String(error);
 }
-const zipCorpusLine = zipManifestText
+const zipCorpusLine = zipFullManifestText
   .split(/\r?\n/)
   .find(line => line.endsWith('  docs/corpus/v1.0.0/Brainlink_Documentacao_Completa_v1.0.0.zip'));
 const zipCorpusHash = zipCorpusLine?.split(/\s{2}/, 1)[0] ?? '';
@@ -75,16 +87,19 @@ check('v2.2 remains a separate candidate entrypoint', v22Setup.includes('materia
 check('ZIP-authoritative v2.3 remains a separate candidate entrypoint', v23Setup.includes('materialize-brainlink-zip-candidate.ps1'));
 check('Windows v2.2 uses transport-safe migrator', v22ps.includes('apply-execution-v22-safe.mjs'));
 check('Unix v2.2 uses transport-safe migrator', v22sh.includes('apply-execution-v22-safe.mjs'));
-check('Windows v2.3 rebuilds stable baseline before overlay', v23ps.includes("$Stable") && v23ps.includes("& $Stable") && v23ps.includes('Candidate overlay checksum mismatch'));
-check('Unix v2.3 rebuilds stable baseline before overlay', v23sh.includes('materialize-brainlink.sh') && v23sh.includes('ARCHIVE_SHA=') && v23sh.includes('MANIFEST_SHA='));
+check('Windows v2.3 uses compact runtime transport and independent auditor', v23ps.includes('.brainlink-zip-candidate-v23-runtime') && v23ps.includes('BRAINLINK_ZIP_CANDIDATE_V23_RUNTIME.sha256') && v23ps.includes('brainlink-audit-v23-transport.mjs'));
+check('Unix v2.3 uses compact runtime transport and independent auditor', v23sh.includes('.brainlink-zip-candidate-v23-runtime') && v23sh.includes('BRAINLINK_ZIP_CANDIDATE_V23_RUNTIME.sha256') && v23sh.includes('brainlink-audit-v23-transport.mjs'));
 check('Stable overlay excludes v2.2 execution source/tests', !exists(stableExecution) && !exists(stableExecutionTest));
 check('Candidate overlay owns v2.2 execution source/tests', exists(candidateExecution) && exists(candidateExecutionTest));
 check('Stable runtime manifest excludes v2.2 execution files', !stableManifestText.includes('execution.ts') && !stableManifestText.includes('execution.spec.ts'));
-check('ZIP candidate transport parts exist', zipPartNames.length > 0, `found ${zipPartNames.length}`);
-check('ZIP candidate overlay SHA-256 matches authority lock', !zipOverlayDecodeError && zipOverlayHash === zipLock.candidate_overlay_sha256, zipOverlayDecodeError || zipOverlayHash);
-check('ZIP candidate final manifest SHA-256 matches authority lock', sha256(Buffer.from(zipManifestText, 'utf8')) === zipLock.candidate_final_manifest_sha256);
-check('Authoritative source ZIP hash is preserved inside candidate manifest', zipCorpusHash === zipLock.authority_source_sha256, zipCorpusHash);
-check('ZIP candidate manifest contains runtime validators and tests', zipManifestText.includes('scripts/brainlink-validate-v23.mjs') && zipManifestText.includes('packages/frontend/core/src/brainlink/__tests__/canon.spec.ts') && zipManifestText.includes('packages/frontend/core/src/brainlink/__tests__/pretask.spec.ts'));
+check('ZIP compact runtime transport parts exist', zipPartNames.length > 0, `found ${zipPartNames.length}`);
+check('ZIP compact runtime archive SHA-256 is independently pinned', isSha256(zipLock.candidate_runtime_overlay_sha256));
+check('ZIP compact runtime manifest SHA-256 is independently pinned', isSha256(zipLock.candidate_runtime_manifest_sha256));
+check('ZIP compact runtime archive matches authority lock', !zipOverlayDecodeError && zipRuntimeArchiveHash === zipLock.candidate_runtime_overlay_sha256, zipOverlayDecodeError || zipRuntimeArchiveHash);
+check('ZIP compact runtime manifest matches authority lock', sha256(Buffer.from(zipRuntimeManifestText, 'utf8')) === zipLock.candidate_runtime_manifest_sha256);
+check('ZIP full corpus/final manifest matches authority lock', sha256(Buffer.from(zipFullManifestText, 'utf8')) === zipLock.candidate_final_manifest_sha256);
+check('Authoritative source ZIP hash is preserved inside full manifest', zipCorpusHash === zipLock.authority_source_sha256, zipCorpusHash);
+check('ZIP compact runtime manifest contains validators and behavior tests', zipRuntimeManifestText.includes('scripts/brainlink-validate-v23.mjs') && zipRuntimeManifestText.includes('packages/frontend/core/src/brainlink/__tests__/canon.spec.ts') && zipRuntimeManifestText.includes('packages/frontend/core/src/brainlink/__tests__/pretask.spec.ts') && zipRuntimeManifestText.includes('packages/frontend/core/src/brainlink/__tests__/execution.spec.ts'));
 check('V5 is explicitly context-only', context.includes('authority=CONTEXT_COMPLEMENT_ONLY'));
 check('V5 cannot auto-promote runtime', context.includes('auto_promote_runtime=false'));
 check('V5 cannot replace product boundaries', context.includes('preserve_product_boundaries=true'));
