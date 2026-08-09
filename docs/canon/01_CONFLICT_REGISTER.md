@@ -1,32 +1,49 @@
-# Brainlink conflict register — documentation reconciliation 2026-08-08
+# Brainlink conflict register — ZIP-authoritative reconciliation 2026-08-08
 
-Every conflict below preserves both source claims and records an effective resolution without editing either source snapshot.
+Every conflict preserves the original source and records a resolution without editing the authoritative ZIP bytes.
 
 | ID | Topic | Source A | Source B / current evidence | Resolution | State |
 |---|---|---|---|---|---|
-| `DOC-CONFLICT-001` | Runtime inspected/implemented | V1/V4 historical docs: AFFiNE fork/runtime not inspected or built | Current repository evidence: AFFiNE `v0.27.0` pinned; Brainlink stable runtime `v2.1`; candidate `v2.2`; structural/governance checks recorded | Historical statements remain true **for their snapshot date**. Current status comes from latest verified runtime evidence. | `RESOLVED_BY_TIME_AXIS` |
-| `DOC-CONFLICT-002` | Screen implementation | V4 screen catalog says 44 screens are target-only/not implemented | Current runtime reports 39 primary + 5 contextual route intents implemented structurally | Keep V4 catalog as historical target; current implementation evidence supersedes only the old implementation-status column. Visual/E2E completeness is still separately gated. | `PARTIALLY_SUPERSEDED` |
-| `DOC-CONFLICT-003` | Brainlink installation path | V1/V4 target: `D:\AIIA\01-apps-canonicos\26-Brainlink` | V5 Oráculo host target contains `03-brainlink` under `00-ORACULO MASTER ADMIN`; current repo materializes locally under `.brainlink-workspace/AFFiNE` | Paths are **deployment aliases**, not product identity. Repository identity stays `MRTNLGDR/BRAINLINK`; stable setup path is unchanged. Oráculo-hosted path is an optional future integration target. | `RESOLVED_AS_PATH_ALIASES` |
-| `DOC-CONFLICT-004` | Product ownership | Some integrated V5 sections describe Oráculo as the global host | Brainlink product canon says Brainlink is the knowledge/governance plane | No conflict after boundary normalization: Oráculo coordinates execution/admin; Brainlink remains governance/knowledge. Do not merge runtimes. | `RESOLVED_BY_BOUNDED_CONTEXT` |
-| `DOC-CONFLICT-005` | Ultrabase | V1/V4/V5 choose Ultrabase as data plane | Real Ultrabase repo/manual/runtime still not inspected in this Brainlink execution | Keep as `EXTERNAL_BOUNDARY / BLOCKED_RUNTIME_INPUT`; do not fabricate migrations/RLS/health. | `OPEN_EXTERNAL_INPUT` |
-| `DOC-CONFLICT-006` | Documentation package vs runtime version | V1 package is `1.0.0`; V4 cumulative is `4.0.0-cumulative`; V5 is integrated target; runtime is `v2.1` | Numbers refer to different version axes | Version axes are separated by taxonomy; no numeric comparison is permitted across axes. | `RESOLVED_BY_VERSION_TAXONOMY` |
-| `DOC-CONFLICT-007` | V1 package completeness claims | V1 index references `docs/02_AUTHORITY_AND_TERMS.md`, roadmap/contracts/database/schemas/evidence artifacts | Uploaded v1 ZIP does not contain those referenced paths | Preserve ZIP unchanged; mark missing referenced artifacts as `CORPUS_GAP`. Do not invent them. V4/V5 may be cited as later sources if they contain equivalent content, but they are not retroactively inserted into V1. | `RECORDED_GAP` |
-| `DOC-CONFLICT-008` | V5 adoption | V5 contains many Oráculo/COSMETA/model/vendor target capabilities | User explicitly requires V5/docs to complement, not break existing Brainlink | V5 is `CROSS_PRODUCT_TARGET_SPEC / CONTEXT_COMPLEMENT_ONLY`; only additive Brainlink-owned capabilities may become candidates after non-breakage gates. | `RESOLVED_BY_LATEST_USER_INTENT` |
-| `DOC-CONFLICT-009` | Execution Envelope | V1/V4 describe TaskEnvelope/anti-loop as target spec | Candidate v2.2 implements Execution Envelope semantics, but is not promoted | Candidate remains candidate until stable regression + build/test/promotion gate; documentation cannot auto-promote it. | `CANDIDATE` |
-| `DOC-CONFLICT-010` | AFFiNE strategy | Historical docs initially lacked an inspected pin | Current stable repo pins AFFiNE `v0.27.0` / `c61cc6…` | Current exact pin is effective implementation fact; historical “pin not captured” remains snapshot history. | `RESOLVED_BY_VERIFIED_EVIDENCE` |
+| `DOC-CONFLICT-001` | Runtime inspected/implemented | ZIP historical status says fork/runtime were not inspected/built when authored | Current repository evidence has AFFiNE pin + Brainlink runtime checks | ZIP status remains a historical snapshot; current implementation status comes from later verified evidence. Product requirements still come from ZIP. | `RESOLVED_BY_TIME_AXIS` |
+| `DOC-CONFLICT-002` | Authority of V1 ZIP | Previous reconciliation classified V1 partly as historical | Latest user instruction: “o que vale é o que está no ZIP” | ZIP is promoted to `ZIP_AUTHORITY_SOURCE` for Brainlink intent/contracts. | `RESOLVED_BY_USER_AUTHORITY` |
+| `DOC-CONFLICT-003` | V5 role | V5 contains cross-product Oráculo/COSMETA/Brainlink architecture | User states ZIP is authoritative | V5 becomes `SECONDARY_CONTEXT`; it can complement only when compatible with ZIP and non-breakage. | `RESOLVED_BY_USER_AUTHORITY` |
+| `DOC-CONFLICT-004` | Missing files referenced by ZIP | ZIP index/docs reference `docs/02`, roadmap, contracts, schemas, DB/evidence artifacts | Those paths are absent from the ZIP archive | Keep original ZIP unchanged and create `REPAIRED_CANON` artifacts derived from requirements already stated in the ZIP. Every repair must say it was reconstructed after package creation. | `REPAIR_REQUIRED` |
+| `DOC-CONFLICT-005` | AFFiNE pin | ZIP says exact pin must be captured during bootstrap | Current verified repository pins AFFiNE `v0.27.0` / `c61cc6a86f5f8364732296f0bb8393b37e0f70b3` | Current pin satisfies the ZIP requirement; do not undo it. | `RESOLVED_BY_VERIFIED_EVIDENCE` |
+| `DOC-CONFLICT-006` | Screen state | ZIP target docs describe screens as product requirements, not implemented runtime | Current runtime structurally implements 44 route intents | Keep ZIP as target authority; current evidence advances implementation status. Visual/E2E quality remains separately gated. | `PARTIALLY_IMPLEMENTED` |
+| `DOC-CONFLICT-007` | Rule scopes/read gates | ZIP specifies 11 precedence scopes and 11 read gates | Current runtime/candidate initially implements a reduced subset | Extend policy/runtime compatibly; do not weaken existing gates. | `IMPLEMENTATION_GAP` |
+| `DOC-CONFLICT-008` | Worker lifecycle/TaskEnvelope | ZIP requires full execution lifecycle, immutable envelope, budgets and anti-loop | Candidate v2.2 implements much but not all ZIP rule/read-gate semantics | Treat v2.2 work as basis, then close remaining ZIP deltas before promotion. | `IMPLEMENTATION_GAP` |
+| `DOC-CONFLICT-009` | Ultrabase | ZIP selects Ultrabase but requires real manual/inventory before migration | Real runtime/manual not available here | Keep `BLOCKED_RUNTIME_INPUT`; build contracts/schema targets only, never fake connected health or migration. | `OPEN_EXTERNAL_INPUT` |
+| `DOC-CONFLICT-010` | MCP/secrets/search | ZIP defines capabilities and contracts, but real services are not present | Current runtime keeps adapters/metadata only | Implement interfaces/contracts/status truth; external health remains `UNKNOWN/BLOCKED` until real services exist. | `OPEN_EXTERNAL_INPUT` |
+| `DOC-CONFLICT-011` | Package version vs runtime version | ZIP is documentation/product spec `1.0.0`; runtime is `v2.1/v2.2` | Different version axes | Never compare or use one number to supersede the other. | `RESOLVED_BY_VERSION_TAXONOMY` |
+| `DOC-CONFLICT-012` | “Perfect/100%” | Product goal asks for complete, reliable software | ZIP explicitly forbids fake completion and requires evidence | Definition is: no known blocking defect for the claimed release scope; all applicable gates/evidence pass; external blockers remain visible. | `RESOLVED_BY_EVIDENCE_GATE` |
 
-## Corpus gaps found in uploaded V1 ZIP
+## Verified integrity of the authoritative ZIP
 
-The uploaded ZIP is internally intact: its own `SHA256SUMS.txt` validates **56/56 included files**. Integrity does not imply that every path mentioned by prose exists in the archive.
+- archive SHA-256: `4bce9d511680c70d7cfd51dbc4ef203172a46fa4d10388acd16209fa6b556c09`;
+- 63 ZIP entries;
+- 56 entries listed by `SHA256SUMS.txt`;
+- **56/56 listed files match their SHA-256**.
 
-Notable referenced-but-absent paths include:
+The package is byte-integral even though some referenced files were not included.
+
+## Missing referenced artifacts that require canonical repair
+
+The ZIP itself references, among others:
 
 - `docs/02_AUTHORITY_AND_TERMS.md`;
 - `roadmap/tasks.master.yaml`;
+- `roadmap/gaps-alerts.yaml`;
 - `contracts/openapi.yaml`;
 - `contracts/events.asyncapi.yaml`;
+- `contracts/error-codes.yaml`;
 - `contracts/brainlink-mcp-manifest.json`;
 - `database/migrations/`;
-- the referenced `schemas/` / `evidence/` artifact sets described by the index.
+- `schemas/` including `schemas/software.signature.schema.json`;
+- `spec/shared-entity-contract.yaml`;
+- `checklists/PRE_TASK_100_CHECKS.yaml`;
+- `ui/design-tokens.json`;
+- `oss/manifest.yaml`;
+- `evidence/`;
+- consolidated `BRAINLINK_COMPLETE_DOCUMENTATION.md`.
 
-These are recorded as gaps of that snapshot, not silently synthesized.
+These are repair work, not grounds to discard the ZIP.
