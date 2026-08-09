@@ -1,0 +1,265 @@
+name: Brainlink CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: brainlink-ci-${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NODE_VERSION: "22.16.0"
+  YARN_VERSION: "4.13.0"
+  NODE_OPTIONS: "--max-old-space-size=8192"
+
+jobs:
+  repository-guards:
+    name: Repository byte-level non-breakage guards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pinned workflow source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Verify stable, transport, final assembly and V5 boundaries
+        run: node scripts/brainlink-nonbreakage-guard.mjs
+
+  transport-audit-v23:
+    name: Strict ZIP-authoritative v2.3 transport audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pinned workflow source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Reconstruct and audit compact runtime transport
+        run: node scripts/brainlink-audit-v23-transport.mjs --output=brainlink-v23-transport-audit.json --require-pinned
+      - name: Upload transport audit evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: brainlink-v23-transport-audit-${{ github.sha }}
+          path: brainlink-v23-transport-audit.json
+          if-no-files-found: error
+          retention-days: 90
+
+  stable-runtime:
+    name: Stable v2.1 immutable install and tests
+    needs: repository-guards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - name: Checkout pinned workflow source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Activate pinned Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@${YARN_VERSION} --activate
+          node --version
+          yarn --version
+      - name: Materialize stable runtime
+        run: bash scripts/materialize-brainlink.sh
+      - name: Install immutable dependencies
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn install --immutable
+      - name: Run stable validation and tests
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn brainlink:check
+
+  candidate-v22:
+    name: Superseded v2.2 regression and execution envelopes
+    needs: repository-guards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - name: Checkout pinned workflow source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Activate pinned Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@${YARN_VERSION} --activate
+      - name: Materialize v2.2 over verified stable base
+        run: bash scripts/materialize-brainlink-v22.sh
+      - name: Install immutable dependencies
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn install --immutable
+      - name: Run stable regression suite on v2.2
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn brainlink:check
+      - name: Run v2.2-specific structural suite
+        run: node scripts/brainlink-v22-validate.mjs .brainlink-workspace/AFFiNE
+
+  candidate-v23:
+    name: ZIP-authoritative v2.3 immutable install and tests
+    needs:
+      - repository-guards
+      - transport-audit-v23
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout pinned workflow source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Activate pinned Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@${YARN_VERSION} --activate
+          node --version
+          yarn --version
+      - name: Materialize final assembled v2.3 runtime
+        run: bash scripts/materialize-brainlink-zip-candidate.sh
+      - name: Install immutable dependencies
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn install --immutable
+      - name: Run candidate validation and all Brainlink tests
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn brainlink:check
+      - name: Re-run v2.3 structural validator explicitly
+        working-directory: .brainlink-workspace/AFFiNE
+        run: node scripts/brainlink-validate-v23.mjs
+
+  stable-build:
+    name: Stable v2.1 production build
+    needs: stable-runtime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout pinned workflow source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Activate pinned Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@${YARN_VERSION} --activate
+      - name: Materialize stable runtime
+        run: bash scripts/materialize-brainlink.sh
+      - name: Install immutable dependencies
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn install --immutable
+      - name: Build production applications
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn brainlink:build
+
+  candidate-v23-build:
+    name: ZIP-authoritative v2.3 typecheck and production build
+    needs: candidate-v23
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    steps:
+      - name: Checkout pinned workflow source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Activate pinned Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@${YARN_VERSION} --activate
+      - name: Materialize final assembled candidate
+        run: bash scripts/materialize-brainlink-zip-candidate.sh
+      - name: Install immutable dependencies
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn install --immutable
+      - name: Run monorepo TypeScript build graph
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn typecheck
+      - name: Build production applications
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn brainlink:build
+
+  release-evidence:
+    name: Publish and enforce machine-verifiable release evidence
+    if: ${{ always() }}
+    needs:
+      - repository-guards
+      - transport-audit-v23
+      - stable-runtime
+      - candidate-v22
+      - candidate-v23
+      - stable-build
+      - candidate-v23-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      BRAINLINK_JOB_RESULTS: >-
+        {"repository-guards":"${{ needs.repository-guards.result }}","transport-audit-v23":"${{ needs.transport-audit-v23.result }}","stable-runtime":"${{ needs.stable-runtime.result }}","candidate-v22":"${{ needs.candidate-v22.result }}","candidate-v23":"${{ needs.candidate-v23.result }}","stable-build":"${{ needs.stable-build.result }}","candidate-v23-build":"${{ needs.candidate-v23-build.result }}"}
+    steps:
+      - name: Checkout exact tested commit
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Generate evidence manifest from actual job results
+        run: node scripts/brainlink-ci-evidence.mjs --output=brainlink-ci-evidence.json
+      - name: Upload immutable evidence artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: brainlink-ci-evidence-${{ github.sha }}
+          path: brainlink-ci-evidence.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Enforce complete release gate
+        run: node scripts/brainlink-ci-evidence.mjs --output=brainlink-ci-evidence.json --enforce
