@@ -195,3 +195,42 @@ jobs:
       - name: Build production applications
         working-directory: .brainlink-workspace/AFFiNE
         run: yarn brainlink:build
+
+  release-evidence:
+    name: Publish and enforce machine-verifiable release evidence
+    if: ${{ always() }}
+    needs:
+      - repository-guards
+      - stable-runtime
+      - candidate-v22
+      - candidate-v23
+      - stable-build
+      - candidate-v23-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      BRAINLINK_JOB_RESULTS: >-
+        {"repository-guards":"${{ needs.repository-guards.result }}","stable-runtime":"${{ needs.stable-runtime.result }}","candidate-v22":"${{ needs.candidate-v22.result }}","candidate-v23":"${{ needs.candidate-v23.result }}","stable-build":"${{ needs.stable-build.result }}","candidate-v23-build":"${{ needs.candidate-v23-build.result }}"}
+    steps:
+      - name: Checkout exact tested commit
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Generate evidence manifest from actual job results
+        run: node scripts/brainlink-ci-evidence.mjs --output=brainlink-ci-evidence.json
+      - name: Upload immutable evidence artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: brainlink-ci-evidence-${{ github.sha }}
+          path: brainlink-ci-evidence.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Enforce complete release gate
+        run: node scripts/brainlink-ci-evidence.mjs --output=brainlink-ci-evidence.json --enforce
