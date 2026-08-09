@@ -20,16 +20,16 @@ The local governance runtime is now **schema v2** with v1 migration support.
 - Full-state backup parser, v1→v2 migration and imported-write invariant repair.
 - Explicit bug verification before `SOLVED`.
 - Task-derived project progress.
-- Audit/evidence ledgers, JSON export/import/reset and cross-tab local synchronization.
+- SHA-256 hash-chained audit ledger with sequence/prevHash/eventHash verification, plus evidence ledger, JSON export/import/reset and cross-tab local synchronization.
 - Connections persist metadata/reference information only; secret values are excluded from `BrainlinkState`.
 - Vitest suites cover governance policy and state migration/import invariants.
 
 ## Verification performed
 
-1. Structural runtime validator: **35/35 checks passed**.
+1. Structural runtime validator: **42/42 checks passed**.
 2. Strict TypeScript check for `types.ts`, `store.ts`, `policy.ts`: **passed**.
 3. Isolated strict semantic TypeScript check for `app.tsx` with only React/Router externals declared: **passed**.
-4. Compiled governance behavior execution: **10/10 cases passed**, covering contextual scopes, start/error/end gates, fresh evidence, connector approvals, derived progress, v1 migration and malicious/unapproved write import downgrade.
+4. Compiled governance behavior execution: **15/15 cases passed**, covering contextual scopes, start/error/end gates, fresh evidence, connector approvals, derived progress, v1 migration and malicious/unapproved write import downgrade.
 5. Earlier Yarn immutable resolution reached package fetch without lockfile mutation after upstream workspace identity was restored.
 
 ## Environment limitation
