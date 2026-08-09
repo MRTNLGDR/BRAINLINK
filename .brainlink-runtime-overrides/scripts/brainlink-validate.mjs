@@ -14,6 +14,7 @@ const assert = (name, condition, detail = '') => {
 
 const app = read('packages/frontend/core/src/brainlink/app.tsx');
 const catalog = read('packages/frontend/core/src/brainlink/catalog.ts');
+const integrity = read('packages/frontend/core/src/brainlink/integrity.ts');
 const desktopRouter = read('packages/frontend/core/src/desktop/router.tsx');
 const mobileRouter = read('packages/frontend/core/src/mobile/router.tsx');
 const policy = read('packages/frontend/core/src/brainlink/policy.ts');
@@ -49,7 +50,14 @@ assert('No fake live connector status', !types.includes("'CONNECTED'") && app.in
 assert('Imported write bypass is downgraded', store.includes('UNAPPROVED_WRITE_DOWNGRADED'));
 assert('Bug solve requires explicit verification', app.includes('BUG_VERIFIED_SOLVED') && !app.includes("if (event.target.value.trim()) item.status = 'SOLVED'"));
 assert('Project progress derived from tasks', policy.includes('projectProgress') && !app.includes('+10% progress'));
-assert('Audit ledger implemented', app.includes('Append-only application audit ledger'));
+assert('Audit integrity module exists', exists('packages/frontend/core/src/brainlink/integrity.ts'));
+assert('Audit chain fields modeled', types.includes('sequence?: number') && types.includes('prevHash?: string') && types.includes('eventHash?: string'));
+assert('SHA-256 audit hashing implemented', integrity.includes('sha256Hex') && integrity.includes('hashAuditEvent'));
+assert('Audit append uses hash chain', app.includes('appendAuditEvent(draft.audit') && store.includes('appendAuditEvent(state.audit'));
+assert('Imported audit chain is verified', store.includes('verifyAuditChain(state.audit)') && store.includes('audit integrity'));
+assert('Audit tamper tests exist', exists('packages/frontend/core/src/brainlink/__tests__/integrity.spec.ts') && read('packages/frontend/core/src/brainlink/__tests__/integrity.spec.ts').includes('detects mutation'));
+assert('Audit history is not silently truncated', !app.includes('audit.slice(0, 1000)'));
+assert('Audit ledger implemented', app.includes('SHA-256 chained audit ledger') && app.includes('CHAIN VALID'));
 assert('Backup export implemented', app.includes('brainlink-backup-'));
 assert('Backup import uses strict parser', app.includes('parseBrainlinkState(JSON.parse(await file.text()))'));
 assert('State schema v2 implemented', types.includes('schemaVersion: 2') && store.includes('schemaVersion: 2'));
