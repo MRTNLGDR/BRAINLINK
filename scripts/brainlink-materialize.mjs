@@ -12,7 +12,6 @@ const DEFAULTS = Object.freeze({
   upstreamTag: 'v0.27.0',
   upstreamCommit: 'c61cc6a86f5f8364732296f0bb8393b37e0f70b3',
   overlaySha256: '1b4e3aa98dd378eb7299e071aa83329643114e40b3e66a378c319613a2a94b8d',
-  manifestSha256: 'e16f1e4b9043c3a4d35a201f307f0f41811cad06280e87070acc92dc49e9c1c1',
 });
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -22,6 +21,12 @@ const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, millise
 const sha256Buffer = value => crypto.createHash('sha256').update(value).digest('hex');
 const sha256File = file => sha256Buffer(fs.readFileSync(file));
 const stamp = () => new Date().toISOString().replace(/[:.]/g, '-');
+const parseLock = content => Object.fromEntries(
+  content.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+    const separator = line.indexOf('=');
+    return separator < 0 ? [line, ''] : [line.slice(0, separator), line.slice(separator + 1)];
+  })
+);
 
 const commandString = (command, args) =>
   [command, ...args].map(value => (String(value).includes(' ') ? JSON.stringify(String(value)) : String(value))).join(' ');
@@ -168,9 +173,16 @@ const copyOverrides = (sourceRoot, target) => {
 
 const verifyManifest = ({ sourceRoot, target }) => {
   const manifest = path.join(sourceRoot, 'BRAINLINK_RUNTIME_V2.sha256');
+  const lockPath = path.join(sourceRoot, 'AFFINE_UPSTREAM.lock');
+  if (!fs.existsSync(lockPath)) throw new Error(`Missing stable authority lock: ${lockPath}`);
+  const lock = parseLock(fs.readFileSync(lockPath, 'utf8'));
+  const expectedManifestHash = lock.brainlink_runtime_v21_manifest_sha256;
+  if (!/^[0-9a-f]{64}$/.test(expectedManifestHash ?? '')) {
+    throw new Error('Stable authority lock does not contain a valid brainlink_runtime_v21_manifest_sha256.');
+  }
   const manifestHash = sha256File(manifest);
-  if (manifestHash !== DEFAULTS.manifestSha256) {
-    throw new Error(`Brainlink manifest checksum mismatch. Expected ${DEFAULTS.manifestSha256}, got ${manifestHash}.`);
+  if (manifestHash !== expectedManifestHash) {
+    throw new Error(`Brainlink manifest checksum mismatch. Expected ${expectedManifestHash}, got ${manifestHash}.`);
   }
   for (const line of fs.readFileSync(manifest, 'utf8').split(/\r?\n/)) {
     if (!line.trim()) continue;
