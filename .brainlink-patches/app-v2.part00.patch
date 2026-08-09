@@ -1,0 +1,127 @@
+--- a/packages/frontend/core/src/brainlink/app.tsx
++++ b/packages/frontend/core/src/brainlink/app.tsx
+@@ -3,12 +3,22 @@
+ import { useLocation, useNavigate } from 'react-router-dom';
+ 
+ import { BRAINLINK_SCREENS } from './catalog';
+-import { canTaskComplete, canWorkerRun, effectiveMandatoryLaws } from './policy';
+ import {
++  canTaskComplete,
++  canWorkerRun,
++  connectionHasApprovedWrite,
++  effectiveMandatoryLaws,
++  projectProgress,
++  taskCompletionBlockers,
++  workerStartRequiredLaws,
++} from './policy';
++import {
++  BRAINLINK_LEGACY_STORAGE_KEYS,
+   BRAINLINK_STORAGE_KEY,
+   createBrainlinkId,
+   createDefaultBrainlinkState,
+   loadBrainlinkState,
++  parseBrainlinkState,
+   saveBrainlinkState,
+ } from './store';
+ import type {
+@@ -166,10 +176,9 @@
+ 
+   useEffect(() => {
+     const sync = (event: StorageEvent) => {
+-      if (event.key !== BRAINLINK_STORAGE_KEY || !event.newValue) return;
++      if (!event.key || (event.key !== BRAINLINK_STORAGE_KEY && !BRAINLINK_LEGACY_STORAGE_KEYS.includes(event.key as typeof BRAINLINK_LEGACY_STORAGE_KEYS[number])) || !event.newValue) return;
+       try {
+-        const incoming = JSON.parse(event.newValue) as BrainlinkState;
+-        if (incoming.schemaVersion === 1) setState(incoming);
++        setState(parseBrainlinkState(JSON.parse(event.newValue)));
+       } catch {
+         // Ignore malformed writes from unrelated scripts; import has a stricter visible error path.
+       }
+@@ -266,16 +275,18 @@
+   };
+ 
+   const workerAuthorized = (worker: BrainlinkWorker) => canWorkerRun(state, worker);
++  const requiredLawsForWorker = (worker: BrainlinkWorker) => workerStartRequiredLaws(state, worker);
+ 
+   const authorizeWorker = (worker: BrainlinkWorker) => {
+-    commit('WORKER_RULE_GATE_ACKNOWLEDGED', `${worker.name} acknowledged ${mandatoryLaws.length} mandatory law(s)`, draft => {
+-      for (const law of draft.laws.filter(item => item.enabled && item.mandatory)) {
++    const required = requiredLawsForWorker(worker);
++    commit('WORKER_RULE_GATE_ACKNOWLEDGED', `${worker.name} acknowledged ${required.length} effective start law(s)`, draft => {
++      for (const law of workerStartRequiredLaws(draft, worker)) {
+         draft.receipts = draft.receipts.filter(receipt => !(receipt.actor === worker.name && receipt.lawId === law.id && receipt.lawVersion === law.version));
+         draft.receipts.unshift({ id: createBrainlinkId('RCPT'), lawId: law.id, lawVersion: law.version, actor: worker.name, readAt: new Date().toISOString() });
+       }
+-      draft.evidence.unshift({ id: createBrainlinkId('EVID'), type: 'CHECKPOINT', title: 'Worker read gate completed', detail: `${worker.name} acknowledged all currently effective mandatory laws.`, actor: worker.name, createdAt: new Date().toISOString() });
++      draft.evidence.unshift({ id: createBrainlinkId('EVID'), type: 'CHECKPOINT', title: 'Worker read gate completed', detail: `${worker.name} acknowledged every effective SESSION_START/TASK_START law for the current context.`, actor: worker.name, taskId: worker.currentTaskId, createdAt: new Date().toISOString() });
+     });
+-    setToast(`${worker.name} passed the read gate.`);
++    setToast(`${worker.name} passed the contextual read gate.`);
+   };
+ 
+   const setWorkerStatus = (worker: BrainlinkWorker, status: BrainlinkWorker['status']) => {
+@@ -295,8 +306,9 @@
+   const changeTaskStatus = (taskId: string, status: BrainlinkTaskStatus) => {
+     const task = state.tasks.find(item => item.id === taskId);
+     if (!task) return;
+-    if (status === 'DONE' && !canTaskComplete(state, task)) {
+-      setToast('Evidence gate blocked DONE: attach task evidence first.');
++    if (status === 'DONE' && !canTaskComplete(state, task, state.settings.actorName)) {
++      const blockers = taskCompletionBlockers(state, task, state.settings.actorName);
++      setToast(`DONE blocked: ${blockers.join(' + ') || 'governance requirements'}.`);
+       return;
+     }
+     commit('TASK_STATUS_CHANGED', `${task.title}: ${task.status} -> ${status}`, draft => {
+@@ -323,9 +335,8 @@
+     const file = event.target.files?.[0];
+     if (!file) return;
+     try {
+-      const parsed = JSON.parse(await file.text()) as BrainlinkState;
+-      if (parsed.schemaVersion !== 1 || !Array.isArray(parsed.tasks) || !Array.isArray(parsed.audit)) throw new Error('Invalid Brainlink backup');
+-      parsed.audit.unshift({ id: createBrainlinkId('AUD'), action: 'STATE_IMPORTED', detail: `Imported backup ${file.name}`, actor: parsed.settings?.actorName || 'Local Operator', createdAt: new Date().toISOString() });
++      const parsed = parseBrainlinkState(JSON.parse(await file.text()));
++      parsed.audit.unshift({ id: createBrainlinkId('AUD'), action: 'STATE_IMPORTED', detail: `Imported and validated backup ${file.name}`, actor: parsed.settings.actorName || 'Local Operator', createdAt: new Date().toISOString() });
+       saveBrainlinkState(parsed);
+       setState(parsed);
+       setToast('Backup imported and validated.');
+@@ -336,6 +347,17 @@
+     }
+   };
+ 
++  const decideApproval = (approvalId: string, status: 'APPROVED' | 'REJECTED') => {
++    const approval = state.approvals.find(item => item.id === approvalId);
++    if (!approval || approval.status !== 'PENDING') return;
++    commit('APPROVAL_DECIDED', `${approval.id} ${status.toLowerCase()}`, draft => {
++      const item = draft.approvals.find(entry => entry.id === approval.id);
++      if (item) item.status = status;
++    });
++  };
++
++  const renderApprovals = () => <div className="bl-grid"><Card title="Human approvals" span="12"><div className="bl-list">{state.approvals.length ? state.approvals.map(approval => <div className="bl-row" key={approval.id}><div className="bl-row-main"><strong>{approval.title}</strong><small>{approval.detail}</small>{approval.connectionId ? <small>Connector: {approval.connectionId} · requested {approval.requestedMode}</small> : null}</div><div className="bl-actions"><Badge tone={toneForStatus(approval.status)}>{approval.status}</Badge>{approval.status === 'PENDING' ? <><button className="bl-btn" data-primary="true" onClick={() => decideApproval(approval.id, 'APPROVED')}>Approve</button><button className="bl-btn" onClick={() => decideApproval(approval.id, 'REJECTED')}>Reject</button></> : null}</div></div>) : <div className="bl-empty">No approvals.</div>}</div></Card></div>;
++
+   const renderDashboard = () => (
+     <div className="bl-grid">
+       <Card title="Governance health"><div className="bl-kpi">{projectHealth}<small>/100</small></div><div className="bl-progress"><span style={{ width: `${projectHealth}%` }} /></div></Card>
+@@ -343,7 +365,7 @@
+       <Card title="Workers running"><div className="bl-kpi">{runningWorkers}<small>of {state.workers.length}</small></div><p>Read gate: {state.settings.workerReadGate ? 'enabled' : 'disabled'}</p></Card>
+       <Card title="Attention"><div className="bl-kpi">{pendingApprovals + openBugs}</div><p>{pendingApprovals} approvals · {openBugs} unresolved bugs</p></Card>
+       <Card title="Pending approvals" span="6">
+-        <div className="bl-list">{state.approvals.length ? state.approvals.slice(0, 6).map(approval => <div className="bl-row" key={approval.id}><div className="bl-row-main"><strong>{approval.title}</strong><small>{approval.detail}</small></div><div className="bl-actions"><Badge tone={toneForStatus(approval.status)}>{approval.status}</Badge>{approval.status === 'PENDING' ? <><button className="bl-btn" onClick={() => commit('APPROVAL_DECIDED', `${approval.id} approved`, draft => { const item = draft.approvals.find(entry => entry.id === approval.id); if (item) item.status = 'APPROVED'; })}>Approve</button><button className="bl-btn" onClick={() => commit('APPROVAL_DECIDED', `${approval.id} rejected`, draft => { const item = draft.approvals.find(entry => entry.id === approval.id); if (item) item.status = 'REJECTED'; })}>Reject</button></> : null}</div></div>) : <div className="bl-empty">No approvals.</div>}</div>
++        <div className="bl-list">{state.approvals.length ? state.approvals.slice(0, 6).map(approval => <div className="bl-row" key={approval.id}><div className="bl-row-main"><strong>{approval.title}</strong><small>{approval.detail}</small></div><div className="bl-actions"><Badge tone={toneForStatus(approval.status)}>{approval.status}</Badge>{approval.status === 'PENDING' ? <><button className="bl-btn" onClick={() => decideApproval(approval.id, 'APPROVED')}>Approve</button><button className="bl-btn" onClick={() => decideApproval(approval.id, 'REJECTED')}>Reject</button></> : null}</div></div>) : <div className="bl-empty">No approvals.</div>}</div>
+       </Card>
+       <Card title="Recent evidence" span="6"><div className="bl-list">{state.evidence.slice(0, 6).map(evidence => <div className="bl-row" key={evidence.id}><div className="bl-row-main"><strong>{evidence.title}</strong><small>{evidence.actor} · {formatDate(evidence.createdAt)}</small></div><Badge>{evidence.type}</Badge></div>)}</div></Card>
+       <Card title="Governance invariants" span="12"><div className="bl-list"><div className="bl-row"><div><strong>Mandatory laws are explicit and versioned</strong><small>{mandatoryLaws.length} currently effective mandatory law(s)</small></div><Badge tone="good">ENFORCED</Badge></div><div className="bl-row"><div><strong>DONE can require task evidence</strong><small>Prevents completion without a recorded output/checkpoint.</small></div><Badge tone={state.settings.requireEvidenceForDone ? 'good' : 'warn'}>{state.settings.requireEvidenceForDone ? 'ENFORCED' : 'DISABLED'}</Badge></div><div className="bl-row"><div><strong>All local mutations enter audit ledger</strong><small>Stored in {BRAINLINK_STORAGE_KEY} and included in export.</small></div><Badge tone="good">ENFORCED</Badge></div></div></Card>
+@@ -359,17 +381,41 @@
+       commit('PROJECT_CREATED', name, draft => draft.projects.unshift({ id: createBrainlinkId('PRJ'), name, description: String(data.get('description') || ''), health: 100, progress: 0, createdAt: new Date().toISOString() }));
+       event.currentTarget.reset();
+     };
+-    return <div className="bl-grid"><Card title="Create project" span="12"><form className="bl-form" onSubmit={addProject}><div className="bl-field" data-span="4"><label>Name</label><input name="name" required placeholder="Project name" /></div><div className="bl-field" data-span="6"><label>Description</label><input name="description" placeholder="Purpose and scope" /></div><div className="bl-field"><label>&nbsp;</label><button className="bl-btn" data-primary="true">Create project</button></div></form></Card>{state.projects.map(project => <Card key={project.id} title={project.name} span="4"><p>{project.description || 'No description.'}</p><div className="bl-meta"><Badge tone={project.health > 75 ? 'good' : project.health > 50 ? 'warn' : 'bad'}>health {project.health}</Badge><Badge>{project.progress}% complete</Badge></div><div className="bl-progress"><span style={{ width: `${project.progress}%` }} /></div><div className="bl-actions" style={{ marginTop: 12 }}><button className="bl-btn" onClick={() => navigate(`${base}/projects/${project.id}`)}>Open</button><button className="bl-btn" onClick={() => commit('PROJECT_PROGRESS_UPDATED', project.name, draft => { const item = draft.projects.find(entry => entry.id === project.id); if (item) item.progress = Math.min(100, item.progress + 10); })}>+10% progress</button></div></Card>)}</div>;
++    return <div className="bl-grid"><Card title="Create project" span="12"><form className="bl-form" onSubmit={addProject}><div className="bl-field" data-span="4"><label>Name</label><input name="name" required placeholder="Project name" /></div><div className="bl-field" data-span="6"><label>Description</label><input name="description" placeholder="Purpose and scope" /></div><div className="bl-field"><label>&nbsp;</label><button className="bl-btn" data-primary="true">Create project</button></div></form></Card>{state.projects.map(project => { const progress = projectProgress(state, project.id); return <Card key={project.id} title={project.name} span="4"><p>{project.description || 'No description.'}</p><div className="bl-meta"><Badge tone={project.health > 75 ? 'good' : project.health > 50 ? 'warn' : 'bad'}>health {project.health}</Badge><Badge>{progress}% complete</Badge></div><div className="bl-progress"><span style={{ width: `${progress}%` }} /></div><div className="bl-actions" style={{ marginTop: 12 }}><button className="bl-btn" onClick={() => navigate(`${base}/projects/${project.id}`)}>Open</button></div></Card>; })}</div>;
+   };
+ 
+-  const renderWorld = () => <div className="bl-world">{state.projects.map((project, index) => { const size = 130 + Math.min(100, state.tasks.filter(task => task.projectId === project.id).length * 14 + index * 4); return <button className="bl-bubble" key={project.id} style={{ width: size, height: size }} onClick={() => navigate(`${base}/projects/${project.id}`)}><span><strong>{project.name}</strong><small>{project.progress}% · health {project.health}</small></span></button>; })}{state.projects.length === 0 ? <div className="bl-empty">Create a project to populate Project World.</div> : null}</div>;
++  const renderWorld = () => <div className="bl-world">{state.projects.map((project, index) => { const size = 130 + Math.min(100, state.tasks.filter(task => task.projectId === project.id).length * 14 + index * 4); return <button className="bl-bubble" key={project.id} style={{ width: size, height: size }} onClick={() => navigate(`${base}/projects/${project.id}`)}><span><strong>{project.name}</strong><small>{projectProgress(state, project.id)}% · health {project.health}</small></span></button>; })}{state.projects.length === 0 ? <div className="bl-empty">Create a project to populate Project World.</div> : null}</div>;
+ 
+   const renderUniversalis = () => {
+     const addLaw = (event: FormEvent<HTMLFormElement>) => {
+-      event.preventDefault(); const data = new FormData(event.currentTarget); 
