@@ -15,13 +15,10 @@ The V5 source does not automatically override implementation. Brainlink adopts o
 
 The current stable runtime remains **v2.1**. Execution Envelopes remain **v2.2 candidate**.
 
-## Candidate setup defect corrected
+## Candidate setup defects corrected
 
-The v2.2 candidate materializers previously referenced `apply-execution-v22.mjs` directly even though the repository already contained the transport-safety shim required by that generated-source migration.
-
-Both candidate materializers now use:
-
-`scripts/apply-execution-v22-safe.mjs`
+1. The v2.2 candidate materializers referenced `apply-execution-v22.mjs` directly even though the generated-source migration requires the repository transport-safety shim. Windows and Unix candidate materializers now use `scripts/apply-execution-v22-safe.mjs`.
+2. `execution.ts` and `execution.spec.ts` were initially stored under `.brainlink-runtime-overrides/`. Because the stable v2.1 materializer copies that directory recursively, a complete TypeScript build could have seen candidate-only files whose execution types are introduced only by v2.2. These files were moved to `.brainlink-v22-overrides/` and are injected only by the candidate materializers.
 
 The normal `BRAINLINK_SETUP.bat` was not changed and continues to call the stable v2.1 materializer.
 
@@ -29,7 +26,7 @@ The normal `BRAINLINK_SETUP.bat` was not changed and continues to call the stabl
 
 `node scripts/brainlink-nonbreakage-guard.mjs`
 
-Observed result in the verification harness:
+Observed result in the verification harness after source isolation:
 
 ```text
 PASS  Stable runtime remains v2.1
@@ -37,16 +34,18 @@ PASS  Stable setup still uses v2.1 materializer
 PASS  v2.2 remains a separate candidate entrypoint
 PASS  Windows v2.2 uses transport-safe migrator
 PASS  Unix v2.2 uses transport-safe migrator
+PASS  Stable overlay excludes v2.2 execution source/tests
+PASS  Candidate overlay owns v2.2 execution source/tests
 PASS  V5 is explicitly context-only
 PASS  V5 cannot auto-promote runtime
 PASS  V5 cannot replace product boundaries
 PASS  V5 source provenance is pinned
 
-9/9 non-breakage checks passed.
+11/11 non-breakage checks passed.
 ```
 
 ## Promotion policy
 
-The v2.2 candidate materializers now run the repository non-breakage guard before candidate work. They then reconstruct the verified stable v2.1 base, apply the candidate migration, rerun the 42 v2.1 invariants and run the 12 v2.2 invariants.
+The v2.2 candidate materializers run the repository non-breakage guard before candidate work. They then reconstruct the verified stable v2.1 base, inject only `.brainlink-v22-overrides/`, apply the candidate source migration, rerun the 42 v2.1 invariants and run the 12 v2.2 invariants.
 
 This evidence does not claim that dependency installation, full AFFiNE production build, browser E2E, accessibility or security suites ran in this network-restricted environment. Those remain promotion gates, not fabricated success states.
