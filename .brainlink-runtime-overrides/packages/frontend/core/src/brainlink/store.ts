@@ -13,6 +13,7 @@ import type {
   BrainlinkTask,
   BrainlinkWorker,
 } from './types';
+import { appendAuditEvent, isLegacyUnsealedAudit, sealLegacyAudit, verifyAuditChain } from './integrity';
 
 export const BRAINLINK_STORAGE_KEY = 'brainlink:state:v2';
 export const BRAINLINK_LEGACY_STORAGE_KEYS = ['brainlink:state:v1'] as const;
@@ -45,7 +46,8 @@ export const createBrainlinkId = (prefix: string) => {
   return `${prefix}-${random}`;
 };
 
-export const createDefaultBrainlinkState = (): BrainlinkState => ({
+export const createDefaultBrainlinkState = (): BrainlinkState => {
+  const state: BrainlinkState = {
   schemaVersion: 2,
   laws: [
     {
@@ -173,7 +175,10 @@ export const createDefaultBrainlinkState = (): BrainlinkState => ({
     requireEvidenceForDone: true,
     workerReadGate: true,
   },
-});
+  };
+  state.audit = sealLegacyAudit(state.audit);
+  return state;
+};
 
 const parseLaw = (value: unknown, legacy: boolean): BrainlinkLaw => {
   if (!isRecord(value)) throw new Error('Invalid Brainlink backup: law');
@@ -345,12 +350,21 @@ const parseNotification = (value: unknown): BrainlinkNotification => {
 
 const parseAudit = (value: unknown): BrainlinkAuditEvent => {
   if (!isRecord(value)) throw new Error('Invalid Brainlink backup: audit');
+  const sequence = typeof value.sequence === 'number' && Number.isInteger(value.sequence) && value.sequence > 0 ? value.sequence : undefined;
+  const prevHash = optionalString(value.prevHash);
+  const eventHash = optionalString(value.eventHash);
+  for (const [name, hash] of [['prevHash', prevHash], ['eventHash', eventHash]] as const) {
+    if (hash !== undefined && !/^[0-9a-f]{64}$/.test(hash)) throw new Error(`Invalid Brainlink backup: audit.${name}`);
+  }
   return {
     id: requiredString(value.id, 'audit.id'),
     action: requiredString(value.action, 'audit.action'),
     detail: typeof value.detail === 'string' ? value.detail : '',
     actor: requiredString(value.actor, 'audit.actor'),
     createdAt: requiredString(value.createdAt, 'audit.createdAt'),
+    sequence,
+    prevHash,
+    eventHash,
   };
 };
 
@@ -385,12 +399,26 @@ export const parseBrainlinkState = (value: unknown): BrainlinkState => {
     },
   };
 
+  if (isLegacyUnsealedAudit(state.audit)) {
+    state.audit = sealLegacyAudit(state.audit);
+    appendAuditEvent(state.audit, {
+      id: createBrainlinkId('AUD'),
+      action: 'AUDIT_CHAIN_INITIALIZED',
+      detail: 'Legacy Brainlink audit history was sealed into a SHA-256 hash chain.',
+      actor: 'system',
+      createdAt: now(),
+    });
+  } else {
+    const integrity = verifyAuditChain(state.audit);
+    if (!integrity.valid) throw new Error(`Invalid Brainlink backup: audit integrity (${integrity.reason}:${integrity.eventId})`);
+  }
+
   for (const connection of state.connections) {
     if (connection.mode !== 'READ_WRITE') continue;
     const approved = state.approvals.some(approval => approval.connectionId === connection.id && approval.requestedMode === 'READ_WRITE' && approval.status === 'APPROVED');
     if (!approved) {
       connection.mode = 'READ_ONLY';
-      state.audit.unshift({
+      appendAuditEvent(state.audit, {
         id: createBrainlinkId('AUD'),
         action: 'UNAPPROVED_WRITE_DOWNGRADED',
         detail: `Connector ${connection.id} was imported as READ_WRITE without an approved capability request and was downgraded to READ_ONLY.`,
@@ -401,10 +429,10 @@ export const parseBrainlinkState = (value: unknown): BrainlinkState => {
   }
 
   if (legacy) {
-    state.audit.unshift({
+    appendAuditEvent(state.audit, {
       id: createBrainlinkId('AUD'),
       action: 'STATE_MIGRATED',
-      detail: 'Migrated Brainlink local state from schema v1 to v2.',
+      detail: 'Migrated Brainlink local state from schema v1 to v2 and sealed its audit history.',
       actor: 'system',
       createdAt: now(),
     });
@@ -421,9 +449,7 @@ export const loadBrainlinkState = (): BrainlinkState => {
       const stored = window.localStorage.getItem(key);
       if (!stored) continue;
       const parsed = parseBrainlinkState(JSON.parse(stored));
-      if (key !== BRAINLINK_STORAGE_KEY || JSON.parse(stored).schemaVersion !== 2) {
-        saveBrainlinkState(parsed);
-      }
+      saveBrainlinkState(parsed);
       return parsed;
     } catch {
       // Try the next known storage key, then fall back to a clean state.
