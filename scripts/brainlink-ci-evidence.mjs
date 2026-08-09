@@ -24,10 +24,12 @@ const parseLock = content => Object.fromEntries(
       return separator < 0 ? [line, ''] : [line.slice(0, separator), line.slice(separator + 1)];
     })
 );
+const isSha256 = value => /^[0-9a-f]{64}$/.test(value ?? '');
 
 const jobs = JSON.parse(process.env.BRAINLINK_JOB_RESULTS ?? '{}');
 const requiredJobs = [
   'repository-guards',
+  'transport-audit-v23',
   'stable-runtime',
   'candidate-v22',
   'candidate-v23',
@@ -41,6 +43,9 @@ const releaseInvariants = {
   stableRuntime: stableLock.brainlink_runtime_release === 'v2.1',
   v22NotPromoted: stableLock.brainlink_candidate_status === 'NOT_PROMOTED',
   zipCandidateNotPromoted: zipAuthority.candidate_status === 'NOT_PROMOTED',
+  zipRuntimeTransportPinned:
+    isSha256(zipAuthority.candidate_runtime_overlay_sha256) &&
+    isSha256(zipAuthority.candidate_runtime_manifest_sha256),
   allRequiredJobsSucceeded: failures.length === 0,
 };
 
@@ -82,13 +87,14 @@ const evidence = {
     zipCandidateFullManifest: hashFile('BRAINLINK_ZIP_CANDIDATE_V23.sha256'),
     zipCandidateRuntimeManifest: hashFile('BRAINLINK_ZIP_CANDIDATE_V23_RUNTIME.sha256'),
     nonbreakageGuard: hashFile('scripts/brainlink-nonbreakage-guard.mjs'),
+    transportAuditor: hashFile('scripts/brainlink-audit-v23-transport.mjs'),
     evidenceGenerator: hashFile('scripts/brainlink-ci-evidence.mjs'),
   },
 };
 
 fs.mkdirSync(path.dirname(output), { recursive: true });
 fs.writeFileSync(output, `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
-console.log(JSON.stringify({ output, releaseGate: evidence.releaseGate, failures }, null, 2));
+console.log(JSON.stringify({ output, releaseGate: evidence.releaseGate, failures, releaseInvariants }, null, 2));
 
 if (enforce && evidence.releaseGate !== 'PASS') {
   console.error(`Brainlink release evidence gate failed: ${failures.join(', ') || 'release invariant failure'}`);
