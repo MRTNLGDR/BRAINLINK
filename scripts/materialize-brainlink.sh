@@ -1,43 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WORKSPACE_ROOT="$ROOT/.brainlink-workspace"
-TARGET="$WORKSPACE_ROOT/AFFiNE"
-RUNTIME_DIR="$ROOT/.brainlink-runtime"
-OVERRIDES="$ROOT/.brainlink-runtime-overrides"
-PATCH_DIR="$ROOT/.brainlink-patches"
-ARCHIVE="$WORKSPACE_ROOT/brainlink-runtime.tar.gz"
-APP_PATCH="$WORKSPACE_ROOT/brainlink-app-v2.patch"
-AUDIT_PATCH_B64="$PATCH_DIR/audit-v21.patch.b64"
-AUDIT_PATCH="$WORKSPACE_ROOT/brainlink-audit-v21.patch"
-MANIFEST="$ROOT/BRAINLINK_RUNTIME_V2.sha256"
-REPO='https://github.com/toeverything/AFFiNE.git'
-TAG='v0.27.0'
-EXPECTED='c61cc6a86f5f8364732296f0bb8393b37e0f70b3'
-OVERLAY_SHA='1b4e3aa98dd378eb7299e071aa83329643114e40b3e66a378c319613a2a94b8d'
-MANIFEST_SHA='1d12289e42b613b9e3e284c61240c2ad9aea318700cf89b52afca25587218680'
-mkdir -p "$WORKSPACE_ROOT"
-cat "$RUNTIME_DIR"/runtime.part*.b64 | base64 --decode > "$ARCHIVE"
-echo "$OVERLAY_SHA  $ARCHIVE" | sha256sum -c -
-echo "$MANIFEST_SHA  $MANIFEST" | sha256sum -c -
-[[ -d "$PATCH_DIR" ]] || { echo 'Missing Brainlink patch directory' >&2; exit 1; }
-[[ -f "$AUDIT_PATCH_B64" ]] || { echo 'Missing Brainlink audit integrity patch transport' >&2; exit 1; }
-base64 --decode "$AUDIT_PATCH_B64" > "$AUDIT_PATCH"
-[[ -d "$TARGET/.git" ]] || git clone --depth 1 --branch "$TAG" "$REPO" "$TARGET"
-ACTUAL="$(git -C "$TARGET" rev-parse HEAD)"
-[[ "$ACTUAL" == "$EXPECTED" ]] || { echo "AFFiNE revision mismatch: $ACTUAL" >&2; exit 1; }
-git -C "$TARGET" reset --hard "$EXPECTED"
-git -C "$TARGET" clean -fd
-tar -xzf "$ARCHIVE" -C "$TARGET"
-[[ ! -d "$OVERRIDES" ]] || cp -a "$OVERRIDES"/. "$TARGET"/
-cat "$PATCH_DIR"/app-v2.linepart*.patch > "$APP_PATCH"
-git -C "$TARGET" apply --whitespace=nowarn "$APP_PATCH"
-git -C "$TARGET" apply --whitespace=nowarn "$AUDIT_PATCH"
-(cd "$TARGET" && sha256sum -c "$MANIFEST")
-if [[ "${1:-}" == '--install' ]]; then
-  node -e "const [a,b]=process.versions.node.split('.').map(Number); if(a!==22||b<12) process.exit(1)" || { echo 'Node >=22.12 <23 required' >&2; exit 1; }
-  corepack enable
-  (cd "$TARGET" && corepack yarn install --immutable && corepack yarn brainlink:validate)
-fi
-echo "[BRAINLINK] Materialized at $TARGET"
-echo '[BRAINLINK] Runtime schema: v2.1 | audit: SHA-256 CHAIN | structural validator: 42/42'
+SCRIPT="$ROOT/scripts/brainlink-materialize.mjs"
+WORKSPACE="$ROOT/.brainlink-workspace"
+node -e "const [a,b]=process.versions.node.split('.').map(Number); if(a!==22||b<12) process.exit(1)" || {
+  echo 'Node.js >=22.12.0 <23.0.0 is required.' >&2
+  exit 1
+}
+ARGS=("$SCRIPT" --source-root "$ROOT" --workspace-root "$WORKSPACE")
+[[ -z "${BRAINLINK_GIT:-}" ]] || ARGS+=(--git "$BRAINLINK_GIT")
+[[ "${1:-}" != '--install' ]] || ARGS+=(--install)
+node "${ARGS[@]}"
