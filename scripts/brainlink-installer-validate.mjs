@@ -21,6 +21,7 @@ const buildBat = read('BRAINLINK_BUILD.bat');
 const bootstrap = read('scripts/brainlink-bootstrap.ps1');
 const oneClick = read('scripts/brainlink-one-click.mjs');
 const materialize = read('scripts/brainlink-materialize.mjs');
+const auditTransform = read('scripts/apply-audit-v21.mjs');
 const packagePatch = read('scripts/brainlink-package-patch.mjs');
 const serve = read('scripts/brainlink-serve.mjs');
 const browserSmoke = read('scripts/brainlink-browser-smoke.mjs');
@@ -45,6 +46,9 @@ check('Managed source self-updates from Brainlink main', oneClick.includes("'fet
 check('Stable AFFiNE source is pinned and self-healed', materialize.includes("upstreamTag: 'v0.27.0'") && materialize.includes("upstreamCommit: 'c61cc6a86f5f8364732296f0bb8393b37e0f70b3'") && materialize.includes('moveToQuarantine'));
 check('Historical overlay cannot replace lock-sensitive upstream files', materialize.includes("'package.json', 'yarn.lock', '.yarnrc.yml', '.yarn/releases/yarn-4.13.0.cjs'"));
 check('Unsafe root package override is absent', !exists('.brainlink-runtime-overrides/package.json'));
+check('Malformed audit patch is provenance only', exists('.brainlink-patches/audit-v21.patch') && exists('.brainlink-patches/audit-v21.patch.b64') && !materialize.includes('decodeAuditPatch') && !materialize.includes('brainlink-audit-v21.patch'));
+check('Stable materializer invokes deterministic audit transform', materialize.includes("import { applyAuditV21 } from './apply-audit-v21.mjs';") && materialize.includes('applyAuditV21(target);'));
+check('Audit transform requires exact final app checksum and anchors', auditTransform.includes("EXPECTED_APP_SHA256 = '5434d86452f0b1cabc6b3ee612c4ca3ac34223d5763db03649075829151fb6ad'") && auditTransform.includes('expected exactly once') && auditTransform.includes('legacy marker remains'));
 check('Package patch verifies exact upstream blob', packagePatch.includes("AFFINE_PACKAGE_BLOB_SHA1 = '35ad088813dc2078137a46795000a60d8e70ddc4'"));
 check('Package patch preserves AFFiNE dependency graph', packagePatch.includes("'@capacitor/cli': '^7.6.5'") && packagePatch.includes("vitest: '^4.1.8'") && packagePatch.includes("tar: '^7.5.16'"));
 check('Install is immutable and uses bundled Yarn directly', materialize.includes("['install', '--immutable']") && materialize.includes(".yarn', 'releases', 'yarn-4.13.0.cjs") && !materialize.includes('corepack'));
