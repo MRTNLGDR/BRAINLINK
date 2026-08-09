@@ -30,6 +30,7 @@ const expectedLockValues = {
     '@vitest/browser': '^4.1.8',
     '@vitest/coverage-istanbul': '^4.1.8',
     '@vitest/ui': '^4.1.8',
+    'cross-env': '^10.1.0',
     oxlint: '1.68.0',
     vitest: '^4.1.8',
   },
@@ -89,7 +90,8 @@ assert('AFFiNE technical workspace identity preserved', pkg.name === '@affine/mo
 assert('Pinned Node and Yarn contract preserved', pkg.engines?.node === '>=22.12.0 <23.0.0' && pkg.packageManager === 'yarn@4.13.0');
 assert('AFFiNE lock-sensitive dependency graph preserved', lockCompatible);
 assert('Brainlink scripts registered', Boolean(pkg.scripts?.['brainlink:dev'] && pkg.scripts?.['brainlink:build'] && pkg.scripts?.['brainlink:validate']));
-assert('Brainlink web scripts target real AFFiNE web app', pkg.scripts?.['brainlink:dev'] === 'yarn affine web dev' && pkg.scripts?.['brainlink:build'] === 'yarn affine web build');
+assert('Brainlink web scripts target real AFFiNE web app', pkg.scripts?.['brainlink:dev'] === 'yarn affine web dev' && pkg.scripts?.['brainlink:build'] === 'cross-env PUBLIC_PATH=/ yarn affine web build && node scripts/brainlink-verify-web-build.mjs');
+assert('Local web build verifier exists', exists('scripts/brainlink-verify-web-build.mjs') && read('scripts/brainlink-verify-web-build.mjs').includes('LOCAL_SELF_CONTAINED_WEB'));
 assert('Brainlink targeted test/check scripts registered', Boolean(pkg.scripts?.['brainlink:test'] && pkg.scripts?.['brainlink:check']));
 assert('Runtime governance canon preserved', exists('docs/43_RUNTIME_IMPLEMENTATION_REPORT_2026-08-08.md') && exists('docs/44_GOVERNANCE_HARDENING_2026-08-08.md'));
 
