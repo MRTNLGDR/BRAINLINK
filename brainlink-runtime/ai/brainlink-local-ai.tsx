@@ -17,11 +17,10 @@ import {
   useState,
 } from 'react';
 
-type ProviderKind = 'worker' | 'ollama' | 'lmstudio' | 'openai-compatible';
+type ProviderKind = 'internal' | 'openrouter';
 
 type ProviderConfig = {
   kind: ProviderKind;
-  endpoint: string;
   model: string;
   allowExternal: boolean;
 };
@@ -50,10 +49,10 @@ type IndexStats = {
 };
 
 const CONFIG_KEY = 'brainlink:ai:provider:v1';
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 const defaultConfig: ProviderConfig = {
-  kind: 'ollama',
-  endpoint: 'http://127.0.0.1:11434',
-  model: 'qwen2.5:7b',
+  kind: 'internal',
+  model: 'brainlink/internal-rag-v1',
   allowExternal: false,
 };
 
@@ -126,40 +125,30 @@ const makeId = () =>
 
 const readConfig = (): ProviderConfig => {
   try {
-    return { ...defaultConfig, ...JSON.parse(localStorage.getItem(CONFIG_KEY) ?? '{}') };
+    const stored = JSON.parse(localStorage.getItem(CONFIG_KEY) ?? '{}') as Partial<ProviderConfig> & { kind?: string };
+    const kind: ProviderKind = stored.kind === 'openrouter' ? 'openrouter' : 'internal';
+    return {
+      kind,
+      model:
+        kind === 'openrouter'
+          ? stored.model || 'openrouter/auto'
+          : 'brainlink/internal-rag-v1',
+      allowExternal: kind === 'openrouter' && Boolean(stored.allowExternal),
+    };
   } catch {
     return defaultConfig;
   }
 };
 
-const isLocalEndpoint = (value: string) => {
-  try {
-    const hostname = new URL(value).hostname;
-    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
-  } catch {
-    return false;
-  }
-};
-
 const providerLabel = (kind: ProviderKind) => ({
-  worker: 'Local Worker Pro',
-  ollama: 'Ollama',
-  lmstudio: 'LM Studio',
-  'openai-compatible': 'OpenAI-compatible',
+  internal: 'Brainlink Internal',
+  openrouter: 'OpenRouter',
 })[kind];
 
-const endpointFor = (kind: ProviderKind) => {
-  if (kind === 'ollama') return 'http://127.0.0.1:11434';
-  if (kind === 'lmstudio') return 'http://127.0.0.1:1234/v1';
-  if (kind === 'openai-compatible') return 'http://127.0.0.1:1234/v1';
-  return '';
-};
-
 const modelFor = (kind: ProviderKind) => {
-  if (kind === 'ollama') return 'qwen2.5:7b';
-  if (kind === 'lmstudio') return 'local-model';
-  if (kind === 'openai-compatible') return 'local-model';
-  return 'bm25-extractive';
+  return kind === 'openrouter'
+    ? 'openrouter/auto'
+    : 'brainlink/internal-rag-v1';
 };
 
 const readStreamLines = async (
@@ -185,7 +174,7 @@ export const BrainlinkLocalAI = () => {
   const workspaceService = useService(WorkspaceService);
   const docDisplayMetaService = useService(DocDisplayMetaService);
   const workspaceId = workspaceService.workspace.id;
-  const messageKey = 'brainlink:ai:messages:' + workspaceId;
+  const messageKey = 'brainlink:ai:messages:v2:' + workspaceId;
   const [config, setConfig] = useState<ProviderConfig>(readConfig);
   const [apiKey, setApiKey] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -293,9 +282,9 @@ export const BrainlinkLocalAI = () => {
     onChunk: (chunk: string) => void,
     signal: AbortSignal
   ) => {
-    if (!isLocalEndpoint(config.endpoint) && !config.allowExternal) {
-      throw new Error('External provider blocked. Enable explicit external access first.');
-    }
+    if (config.kind !== 'openrouter') throw new Error('OpenRouter provider is not selected.');
+    if (!config.allowExternal) throw new Error('OpenRouter access is blocked until explicitly enabled.');
+    if (!apiKey.trim()) throw new Error('Enter an OpenRouter API key for this session.');
     const context = sourceContext(sources);
     const system = [
       'You are Brainlink Local AI running inside an AFFiNE workspace.',
@@ -306,40 +295,19 @@ export const BrainlinkLocalAI = () => {
     ].join(' ');
     const history = messages.slice(-8).map(message => ({ role: message.role, content: message.content }));
     const prompt = 'LOCAL WORKSPACE CONTEXT\n\n' + context + '\n\nUSER REQUEST\n' + question;
-    const base = config.endpoint.replace(/\/$/, '');
-
-    if (config.kind === 'ollama') {
-      const response = await fetch(base + '/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: config.model,
-          stream: true,
-          messages: [{ role: 'system', content: system }, ...history, { role: 'user', content: prompt }],
-          options: { temperature: 0.2 },
-        }),
-        signal,
-      });
-      if (!response.ok) throw new Error('Ollama returned HTTP ' + response.status + '.');
-      await readStreamLines(response, line => {
-        if (!line) return;
-        const packet = JSON.parse(line) as { message?: { content?: string }; error?: string };
-        if (packet.error) throw new Error(packet.error);
-        if (packet.message?.content) onChunk(packet.message.content);
-      });
-      return;
-    }
-
-    const response = await fetch(base + '/chat/completions', {
+    const response = await fetch(OPENROUTER_BASE_URL + '/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(apiKey ? { Authorization: 'Bearer ' + apiKey } : {}),
+        Authorization: 'Bearer ' + apiKey.trim(),
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Brainlink for AFFiNE',
       },
       body: JSON.stringify({
         model: config.model,
         stream: true,
         temperature: 0.2,
+        session_id: 'brainlink-' + workspaceId,
         messages: [{ role: 'system', content: system }, ...history, { role: 'user', content: prompt }],
       }),
       signal,
@@ -369,7 +337,7 @@ export const BrainlinkLocalAI = () => {
       const updateAssistant = (content: string, append = true) => {
         setMessages(previous => previous.map(message => message.id === assistantId ? { ...message, content: append ? message.content + content : content, sources: retrieval.results } : message));
       };
-      if (config.kind === 'worker') {
+      if (config.kind === 'internal') {
         updateAssistant(retrieval.answer, false);
       } else {
         abortRef.current?.abort();
@@ -393,25 +361,30 @@ export const BrainlinkLocalAI = () => {
   }, [askWorker, busy, config, input, messages]);
 
   const testProvider = async () => {
-    if (config.kind === 'worker') {
+    if (config.kind === 'internal') {
       setProviderState('ready');
       setProviderDetail(indexStats.chunks + ' local chunks ready');
       return;
     }
-    if (!isLocalEndpoint(config.endpoint) && !config.allowExternal) {
+    if (!config.allowExternal) {
       setProviderState('error');
-      setProviderDetail('External endpoint blocked');
+      setProviderDetail('OpenRouter access blocked');
+      return;
+    }
+    if (!apiKey.trim()) {
+      setProviderState('error');
+      setProviderDetail('OpenRouter key required');
       return;
     }
     setProviderState('checking');
     setProviderDetail('Checking provider');
     try {
-      const base = config.endpoint.replace(/\/$/, '');
-      const url = config.kind === 'ollama' ? base + '/api/tags' : base + '/models';
-      const response = await fetch(url, { headers: apiKey ? { Authorization: 'Bearer ' + apiKey } : {} });
+      const response = await fetch(OPENROUTER_BASE_URL + '/key', {
+        headers: { Authorization: 'Bearer ' + apiKey.trim() },
+      });
       if (!response.ok) throw new Error('HTTP ' + response.status);
       setProviderState('ready');
-      setProviderDetail(providerLabel(config.kind) + ' connected');
+      setProviderDetail('OpenRouter key verified');
     } catch (reason) {
       setProviderState('error');
       setProviderDetail(reason instanceof Error ? reason.message : String(reason));
@@ -459,7 +432,7 @@ export const BrainlinkLocalAI = () => {
                 {messages.length === 0 ? <div className="bl-ai-welcome">
                   <div className="bl-ai-mark">BL</div>
                   <h1>Ask your workspace</h1>
-                  <p>Local-first AI for AFFiNE documentation. Retrieval runs in a browser worker and only selected evidence is sent to the configured inference provider.</p>
+                  <p>Internal AI for AFFiNE documentation. Reading, indexing and evidence retrieval run in a browser worker. OpenRouter is optional and never used without consent.</p>
                   <div className="bl-ai-suggestions">{suggestions.map(suggestion => <button className="bl-ai-suggestion" key={suggestion} onClick={() => void send(suggestion)}>{suggestion}</button>)}</div>
                 </div> : messages.map(message => <article className="bl-ai-message" data-role={message.role} key={message.id}>
                   <div className="bl-ai-avatar">{message.role === 'assistant' ? 'BL' : 'YOU'}</div>
@@ -485,23 +458,18 @@ export const BrainlinkLocalAI = () => {
 
             {settingsOpen ? <aside className="bl-ai-settings">
               <h2>AI providers</h2>
-              <p>Local-first is enforced. Network access is limited to loopback endpoints unless explicitly unlocked.</p>
+              <p>Brainlink Internal is the default and uses no network. OpenRouter is the only optional external provider.</p>
               <div className="bl-ai-panel">
                 <h3>Inference</h3>
-                <label className="bl-ai-field"><span>Provider</span><select value={config.kind} onChange={event => { const kind = event.target.value as ProviderKind; setConfig(previous => ({ ...previous, kind, endpoint: endpointFor(kind), model: modelFor(kind) })); }}><option value="worker">Local Worker Pro</option><option value="ollama">Ollama</option><option value="lmstudio">LM Studio</option><option value="openai-compatible">OpenAI-compatible</option></select></label>
-                {config.kind !== 'worker' ? <><label className="bl-ai-field"><span>Endpoint</span><input value={config.endpoint} onChange={event => setConfig(previous => ({ ...previous, endpoint: event.target.value }))} /></label><label className="bl-ai-field"><span>Model</span><input value={config.model} onChange={event => setConfig(previous => ({ ...previous, model: event.target.value }))} /></label>{config.kind === 'openai-compatible' ? <label className="bl-ai-field"><span>Session API key, never persisted</span><input type="password" value={apiKey} onChange={event => setApiKey(event.target.value)} autoComplete="off" /></label> : null}</> : null}
+                <label className="bl-ai-field"><span>Provider</span><select value={config.kind} onChange={event => { const kind = event.target.value as ProviderKind; setConfig(previous => ({ ...previous, kind, model: modelFor(kind), allowExternal: kind === 'openrouter' ? previous.allowExternal : false })); }}><option value="internal">Brainlink Internal</option><option value="openrouter">OpenRouter</option></select></label>
+                {config.kind === 'openrouter' ? <><label className="bl-ai-field"><span>OpenRouter model</span><input value={config.model} onChange={event => setConfig(previous => ({ ...previous, model: event.target.value }))} placeholder="openrouter/auto" /></label><label className="bl-ai-field"><span>OpenRouter API key, session only</span><input type="password" value={apiKey} onChange={event => setApiKey(event.target.value)} autoComplete="off" placeholder="sk-or-v1-..." /></label></> : null}
                 <button className="bl-ai-button" style={{ marginTop: 10 }} onClick={() => void testProvider()}>Test provider</button>
-                <label className="bl-ai-toggle"><input type="checkbox" checked={config.allowExternal} onChange={event => setConfig(previous => ({ ...previous, allowExternal: event.target.checked }))} /><span>Allow non-local endpoints. Document context can leave this device when enabled.</span></label>
+                {config.kind === 'openrouter' ? <label className="bl-ai-toggle"><input type="checkbox" checked={config.allowExternal} onChange={event => setConfig(previous => ({ ...previous, allowExternal: event.target.checked }))} /><span>Allow selected evidence to be sent to OpenRouter. Raw workspace documents remain in the internal index.</span></label> : null}
               </div>
               <div className="bl-ai-panel">
-                <h3>Local Worker Pro</h3>
+                <h3>Brainlink Internal Engine</h3>
                 <div className="bl-ai-metrics"><div className="bl-ai-metric"><strong>{indexStats.documents}</strong><span>docs</span></div><div className="bl-ai-metric"><strong>{indexStats.chunks}</strong><span>chunks</span></div><div className="bl-ai-metric"><strong>{indexStats.terms}</strong><span>terms</span></div></div>
-                <div className="bl-ai-notice">BM25 indexing and retrieval run inside a dedicated browser worker. Raw workspace documents are not uploaded for indexing.</div>
-              </div>
-              <div className="bl-ai-panel">
-                <h3>AFFiNE provider</h3>
-                <div className="bl-ai-notice">The original AFFiNE cloud AI remains available as an optional provider. It is never selected by default.</div>
-                <button className="bl-ai-button" style={{ marginTop: 10 }} disabled={!config.allowExternal} onClick={() => { const url = new URL(window.location.href); url.searchParams.set('provider', 'affine-cloud'); window.location.assign(url); }}>Open AFFiNE Cloud AI</button>
+                <div className="bl-ai-notice">BM25 indexing, evidence ranking and extractive synthesis run inside a dedicated browser worker. No model server or local daemon is required.</div>
               </div>
             </aside> : null}
           </div>

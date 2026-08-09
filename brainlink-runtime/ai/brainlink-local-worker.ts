@@ -134,7 +134,7 @@ const queryIndex = (query: string, limit = 6) => {
             result.text.replace(/\s+/g, ' ').slice(0, 420)
         ),
         '',
-        'This is an extractive local result. Start Ollama or LM Studio for a generated synthesis.',
+        'This answer was produced entirely by the Brainlink internal engine.',
       ].join('\n')
     : 'No indexed document contains enough local evidence to answer this question.';
 
