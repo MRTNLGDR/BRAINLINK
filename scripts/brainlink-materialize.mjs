@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { applyAuditV21 } from './apply-audit-v21.mjs';
+import { applyAffineWebPostcssFix } from './apply-affine-web-postcss-fix.mjs';
 import { patchBrainlinkPackage } from './brainlink-package-patch.mjs';
 
 const DEFAULTS = Object.freeze({
@@ -268,6 +269,7 @@ export const materializeBrainlink = async options => {
   // app.tsx SHA-256 before continuing.
   applyAuditV21(target);
 
+  applyAffineWebPostcssFix(target);
   patchBrainlinkPackage(target);
   verifyManifest({ sourceRoot, target });
 

@@ -78,7 +78,7 @@ export const patchBrainlinkPackage = targetRoot => {
   pkg.scripts = {
     ...pkg.scripts,
     'brainlink:validate': 'node scripts/brainlink-validate.mjs',
-    'brainlink:dev': 'yarn affine web dev',
+    'brainlink:dev': 'yarn affine dev --package @affine/web',
     'brainlink:build': 'yarn affine web build',
     'brainlink:test':
       'vitest --run packages/frontend/core/src/brainlink/__tests__',
