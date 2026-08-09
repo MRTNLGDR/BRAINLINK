@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const AFFINE_PACKAGE_BLOB_SHA1 = '35ad088813dc2078137a46795000a60d8e70ddc4';
+export const BRAINLINK_BUILD_SCRIPT = 'cross-env PUBLIC_PATH=/ yarn affine web build && node scripts/brainlink-verify-web-build.mjs';
 
 const sha1GitBlob = raw => {
   const normalized = raw.replace(/\r\n/g, '\n');
@@ -21,6 +22,7 @@ const requiredLockValues = {
     '@vitest/browser': '^4.1.8',
     '@vitest/coverage-istanbul': '^4.1.8',
     '@vitest/ui': '^4.1.8',
+    'cross-env': '^10.1.0',
     oxlint: '1.68.0',
     vitest: '^4.1.8',
   },
@@ -79,7 +81,7 @@ export const patchBrainlinkPackage = targetRoot => {
     ...pkg.scripts,
     'brainlink:validate': 'node scripts/brainlink-validate.mjs',
     'brainlink:dev': 'yarn affine web dev',
-    'brainlink:build': 'yarn affine web build',
+    'brainlink:build': BRAINLINK_BUILD_SCRIPT,
     'brainlink:test':
       'vitest --run packages/frontend/core/src/brainlink/__tests__',
     'brainlink:check': 'yarn brainlink:validate && yarn brainlink:test',
