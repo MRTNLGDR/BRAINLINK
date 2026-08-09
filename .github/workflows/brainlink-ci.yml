@@ -1,0 +1,133 @@
+name: Brainlink CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: brainlink-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NODE_VERSION: "22.16.0"
+  YARN_VERSION: "4.13.0"
+  NODE_OPTIONS: "--max-old-space-size=8192"
+
+jobs:
+  repository-guards:
+    name: Repository non-breakage guards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pinned workflow source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Verify repository invariants
+        run: node scripts/brainlink-nonbreakage-guard.mjs
+
+  stable-runtime:
+    name: Stable v2.1 materialize, install and test
+    needs: repository-guards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout pinned workflow source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Activate pinned Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@${YARN_VERSION} --activate
+          node --version
+          yarn --version
+      - name: Materialize stable runtime
+        run: bash scripts/materialize-brainlink.sh
+      - name: Install immutable dependencies
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn install --immutable
+      - name: Run stable Brainlink validation and tests
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn brainlink:check
+
+  candidate-v22:
+    name: Candidate v2.2 regression and execution envelopes
+    needs: repository-guards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout pinned workflow source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Activate pinned Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@${YARN_VERSION} --activate
+          node --version
+          yarn --version
+      - name: Materialize candidate over verified stable base
+        run: bash scripts/materialize-brainlink-v22.sh
+      - name: Install immutable dependencies
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn install --immutable
+      - name: Run stable regression suite on candidate
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn brainlink:check
+      - name: Run candidate-specific structural suite
+        run: node scripts/brainlink-v22-validate.mjs .brainlink-workspace/AFFiNE
+
+  stable-build:
+    name: Stable v2.1 production build
+    needs: stable-runtime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout pinned workflow source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+      - name: Activate pinned Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@${YARN_VERSION} --activate
+      - name: Materialize stable runtime
+        run: bash scripts/materialize-brainlink.sh
+      - name: Install immutable dependencies
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn install --immutable
+      - name: Build production applications
+        working-directory: .brainlink-workspace/AFFiNE
+        run: yarn brainlink:build
