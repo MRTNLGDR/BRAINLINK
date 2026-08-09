@@ -8,7 +8,8 @@ $Overrides = Join-Path $Root '.brainlink-runtime-overrides'
 $PatchDir = Join-Path $Root '.brainlink-patches'
 $RuntimeArchive = Join-Path $WorkspaceRoot 'brainlink-runtime.tar.gz'
 $AppPatch = Join-Path $WorkspaceRoot 'brainlink-app-v2.patch'
-$AuditPatch = Join-Path $PatchDir 'audit-v21.patch'
+$AuditPatchEncoded = Join-Path $PatchDir 'audit-v21.patch.b64'
+$AuditPatch = Join-Path $WorkspaceRoot 'brainlink-audit-v21.patch'
 $Manifest = Join-Path $Root 'BRAINLINK_RUNTIME_V2.sha256'
 $Repo = 'https://github.com/toeverything/AFFiNE.git'
 $Tag = 'v0.27.0'
@@ -25,7 +26,7 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'Git is requir
 if (-not (Test-Path $RuntimeDir)) { throw "Missing Brainlink runtime bundle: $RuntimeDir" }
 if (-not (Test-Path $Manifest)) { throw "Missing Brainlink v2.1 integrity manifest: $Manifest" }
 if (-not (Test-Path $PatchDir)) { throw "Missing Brainlink patch directory: $PatchDir" }
-if (-not (Test-Path $AuditPatch)) { throw "Missing Brainlink audit integrity patch: $AuditPatch" }
+if (-not (Test-Path $AuditPatchEncoded)) { throw "Missing Brainlink audit integrity patch transport: $AuditPatchEncoded" }
 New-Item -ItemType Directory -Force -Path $WorkspaceRoot | Out-Null
 
 $Encoded = (Get-ChildItem (Join-Path $RuntimeDir 'runtime.part*.b64') | Sort-Object Name | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
@@ -34,6 +35,8 @@ $OverlayHash = (Get-FileHash -Algorithm SHA256 $RuntimeArchive).Hash.ToLowerInva
 if ($OverlayHash -ne $ExpectedOverlay) { throw "Brainlink base overlay checksum mismatch: $OverlayHash" }
 $ManifestHash = (Get-FileHash -Algorithm SHA256 $Manifest).Hash.ToLowerInvariant()
 if ($ManifestHash -ne $ExpectedManifest) { throw "Brainlink v2.1 manifest checksum mismatch: $ManifestHash" }
+$AuditEncoded = Get-Content $AuditPatchEncoded -Raw
+[IO.File]::WriteAllBytes($AuditPatch, [Convert]::FromBase64String($AuditEncoded))
 
 if (-not (Test-Path (Join-Path $Target '.git'))) {
   Write-Host '[BRAINLINK] Cloning pinned AFFiNE v0.27.0...'
