@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import { verifyAuditChain } from '../integrity';
 import { createDefaultBrainlinkState, parseBrainlinkState } from '../store';
 
 describe('Brainlink state parser and migrations', () => {
@@ -26,6 +27,7 @@ describe('Brainlink state parser and migrations', () => {
     expect(migrated.settings.organizationId).toBe('local');
     expect(migrated.connections[0].mode).toBe('READ_ONLY');
     expect(migrated.audit.some(event => event.action === 'STATE_MIGRATED')).toBe(true);
+    expect(verifyAuditChain(migrated.audit).valid).toBe(true);
   });
 
   test('cannot import READ_WRITE without a matching approved request', () => {
@@ -43,6 +45,12 @@ describe('Brainlink state parser and migrations', () => {
     const parsed = parseBrainlinkState(state);
     expect(parsed.connections[0].mode).toBe('READ_ONLY');
     expect(parsed.audit.some(event => event.action === 'UNAPPROVED_WRITE_DOWNGRADED')).toBe(true);
+  });
+
+  test('rejects a backup whose sealed audit history was tampered with', () => {
+    const state = createDefaultBrainlinkState();
+    state.audit[state.audit.length - 1].detail = 'tampered after sealing';
+    expect(() => parseBrainlinkState(state)).toThrow(/audit integrity/);
   });
 
   test('rejects malformed state instead of accepting partial schemaVersion-only data', () => {
