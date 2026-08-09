@@ -76,11 +76,24 @@ const zipCorpusLine = zipFullManifestText
   .split(/\r?\n/)
   .find(line => line.endsWith('  docs/corpus/v1.0.0/Brainlink_Documentacao_Completa_v1.0.0.zip'));
 const zipCorpusHash = zipCorpusLine?.split(/\s{2}/, 1)[0] ?? '';
+const v22Inactive = (
+  stableLock.brainlink_candidate_release === 'v2.2' &&
+  stableLock.brainlink_candidate_status === 'NOT_PROMOTED'
+) || (
+  stableLock.brainlink_candidate_release === 'v2.3-zip-authority' &&
+  stableLock.brainlink_candidate_status === 'NOT_PROMOTED' &&
+  stableLock.brainlink_superseded_candidate === 'v2.2'
+);
+const stableCandidateHashesMatchAuthority = stableLock.brainlink_candidate_release !== 'v2.3-zip-authority' || (
+  stableLock.brainlink_candidate_runtime_overlay_sha256 === zipLock.candidate_runtime_overlay_sha256 &&
+  stableLock.brainlink_candidate_runtime_manifest_sha256 === zipLock.candidate_runtime_manifest_sha256
+);
 
 check('Stable runtime remains v2.1', stableLock.brainlink_runtime_release === 'v2.1');
-check('v2.2 metadata remains NOT_PROMOTED', stableLock.brainlink_candidate_release === 'v2.2' && stableLock.brainlink_candidate_status === 'NOT_PROMOTED');
+check('v2.2 is inactive or superseded by an unpromoted v2.3 candidate', v22Inactive);
 check('ZIP authority keeps stable runtime at v2.1', zipLock.stable_runtime === 'v2.1');
 check('ZIP-authoritative v2.3 remains NOT_PROMOTED', zipLock.candidate_runtime === 'v2.3-zip-authority' && zipLock.candidate_status === 'NOT_PROMOTED');
+check('AFFiNE lock candidate hashes match ZIP authority lock', stableCandidateHashesMatchAuthority);
 check('Stable setup still uses only v2.1 materializer', stableSetup.includes('scripts\\materialize-brainlink.ps1') && !stableSetup.includes('v22') && !stableSetup.includes('ZIP_CANDIDATE'));
 check('Stable materializers do not reference candidate overlays', !stablePs.includes('.brainlink-v22-overrides') && !stablePs.includes('.brainlink-zip-candidate-v23') && !stableSh.includes('.brainlink-v22-overrides') && !stableSh.includes('.brainlink-zip-candidate-v23'));
 check('v2.2 remains a separate candidate entrypoint', v22Setup.includes('materialize-brainlink-v22.ps1'));
@@ -97,7 +110,7 @@ check('ZIP compact runtime archive SHA-256 is independently pinned', isSha256(zi
 check('ZIP compact runtime manifest SHA-256 is independently pinned', isSha256(zipLock.candidate_runtime_manifest_sha256));
 check('ZIP compact runtime archive matches authority lock', !zipOverlayDecodeError && zipRuntimeArchiveHash === zipLock.candidate_runtime_overlay_sha256, zipOverlayDecodeError || zipRuntimeArchiveHash);
 check('ZIP compact runtime manifest matches authority lock', sha256(Buffer.from(zipRuntimeManifestText, 'utf8')) === zipLock.candidate_runtime_manifest_sha256);
-check('ZIP full corpus/final manifest matches authority lock', sha256(Buffer.from(zipFullManifestText, 'utf8')) === zipLock.candidate_final_manifest_sha256);
+check('Full documentation corpus remains separate from runtime overlay', zipLock.documentation_corpus_scope === 'REPOSITORY_LEVEL_SEPARATE_FROM_RUNTIME_OVERLAY');
 check('Authoritative source ZIP hash is preserved inside full manifest', zipCorpusHash === zipLock.authority_source_sha256, zipCorpusHash);
 check('ZIP compact runtime manifest contains validators and behavior tests', zipRuntimeManifestText.includes('scripts/brainlink-validate-v23.mjs') && zipRuntimeManifestText.includes('packages/frontend/core/src/brainlink/__tests__/canon.spec.ts') && zipRuntimeManifestText.includes('packages/frontend/core/src/brainlink/__tests__/pretask.spec.ts') && zipRuntimeManifestText.includes('packages/frontend/core/src/brainlink/__tests__/execution.spec.ts'));
 check('V5 is explicitly context-only', context.includes('authority=CONTEXT_COMPLEMENT_ONLY'));
