@@ -1,8 +1,16 @@
-# Brainlink Execution Envelopes — runtime v2.2
+# Brainlink Execution Envelopes — runtime v2.2 candidate
+
+## Status
+
+`CANDIDATE_NOT_PROMOTED`.
+
+The stable Brainlink runtime remains **v2.1**. This v2.2 work is intentionally additive and is materialized through the separate `BRAINLINK_SETUP_V22.bat` path only after the verified v2.1 tree has been reconstructed first.
+
+The Oráculo/COSMETA/Brainlink V5 source is supporting architectural context, not an automatic migration authority. Its TaskEnvelope and anti-loop requirements reinforce this candidate, while product boundaries remain unchanged.
 
 ## Decision
 
-Every worker execution is now modeled as a separate immutable **attempt** instead of allowing worker/task status changes to overwrite operational history.
+A worker execution is represented in the v2.2 candidate as a separate immutable **attempt** instead of allowing worker/task status changes to overwrite operational history.
 
 Each attempt freezes a `BrainlinkTaskEnvelope` containing:
 
@@ -39,8 +47,12 @@ When a governed task passes the existing DONE gates, active attempts for that ta
 
 The persisted Brainlink state remains schema v2. Existing v2 backups without an `executions` collection are accepted as `executions: []`. Execution envelopes/events are strictly parsed when present.
 
-## Verification
+No Oráculo, COSMETA, Ultrabase, provider, model-runtime or filesystem-management responsibility is moved into Brainlink by this feature.
+
+## Verification already performed in development materialization
 
 The v2.2 execution behavior harness passed **16/16** cases, including deterministic rule-pack hashing, approved-write capability freezing, lifecycle creation, overlap rejection, terminal immutability, normalized error fingerprints, repeated-error anti-loop, checkpoint recovery, old-v2 compatibility, execution round-trip parsing and audit-chain preservation.
 
-The full local structural pass is **54/54** when combining the existing 42 v2.1 invariants with 12 Execution Envelope invariants. Strict TypeScript for the execution/governance core and isolated semantic checking of the app both passed.
+The development structural pass was **54/54** when combining the existing 42 v2.1 invariants with 12 Execution Envelope invariants. Strict TypeScript for the execution/governance core and isolated semantic checking of the app both passed.
+
+These results do **not** promote v2.2. Promotion additionally requires the gates defined in `docs/47_V5_CONTEXT_ADOPTION_AND_NON_BREAKAGE_2026-08-08.md`, including immutable dependency installation, targeted tests, production build, relevant E2E/negative paths, backup compatibility and rollback evidence.
