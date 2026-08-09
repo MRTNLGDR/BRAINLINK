@@ -15,14 +15,10 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const sha256 = value => crypto.createHash('sha256').update(value).digest('hex');
 const hashFile = relative => sha256(fs.readFileSync(path.join(root, relative)));
 const parseLock = content => Object.fromEntries(
-  content
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(Boolean)
-    .map(line => {
-      const separator = line.indexOf('=');
-      return separator < 0 ? [line, ''] : [line.slice(0, separator), line.slice(separator + 1)];
-    })
+  content.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+    const separator = line.indexOf('=');
+    return separator < 0 ? [line, ''] : [line.slice(0, separator), line.slice(separator + 1)];
+  })
 );
 const isSha256 = value => /^[0-9a-f]{64}$/.test(value ?? '');
 
@@ -41,16 +37,29 @@ const zipAuthority = parseLock(read('BRAINLINK_ZIP_AUTHORITY.lock'));
 const failures = requiredJobs.filter(name => jobs[name] !== 'success');
 const releaseInvariants = {
   stableRuntime: stableLock.brainlink_runtime_release === 'v2.1',
-  v22NotPromoted: stableLock.brainlink_candidate_status === 'NOT_PROMOTED',
+  stableManifestPinned: isSha256(stableLock.brainlink_runtime_v21_manifest_sha256),
+  v22SupersededNotPromoted:
+    stableLock.brainlink_superseded_candidate === 'v2.2' &&
+    stableLock.brainlink_candidate_status === 'NOT_PROMOTED',
   zipCandidateNotPromoted: zipAuthority.candidate_status === 'NOT_PROMOTED',
   zipRuntimeTransportPinned:
     isSha256(zipAuthority.candidate_runtime_overlay_sha256) &&
     isSha256(zipAuthority.candidate_runtime_manifest_sha256),
+  zipFinalRuntimePinned:
+    isSha256(zipAuthority.candidate_final_package_sha256) &&
+    isSha256(zipAuthority.candidate_final_runtime_manifest_sha256),
+  candidateAssemblyExplicit:
+    zipAuthority.candidate_assembly === 'VERIFIED_TRANSPORT_PLUS_LOCK_COMPATIBLE_FINAL_OVERRIDE',
+  locksAgree:
+    stableLock.brainlink_candidate_runtime_overlay_sha256 === zipAuthority.candidate_runtime_overlay_sha256 &&
+    stableLock.brainlink_candidate_runtime_manifest_sha256 === zipAuthority.candidate_runtime_manifest_sha256 &&
+    stableLock.brainlink_candidate_final_package_sha256 === zipAuthority.candidate_final_package_sha256 &&
+    stableLock.brainlink_candidate_final_manifest_sha256 === zipAuthority.candidate_final_runtime_manifest_sha256,
   allRequiredJobsSucceeded: failures.length === 0,
 };
 
 const evidence = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   kind: 'BRAINLINK_GITHUB_ACTIONS_RELEASE_EVIDENCE',
   generatedAt: new Date().toISOString(),
   source: {
@@ -75,17 +84,17 @@ const evidence = {
   failedOrSkippedJobs: failures,
   releaseInvariants,
   releaseGate: Object.values(releaseInvariants).every(Boolean) ? 'PASS' : 'FAIL',
-  locks: {
-    affineUpstream: stableLock,
-    zipAuthority,
-  },
+  locks: { affineUpstream: stableLock, zipAuthority },
   repositoryFileHashes: {
     workflow: hashFile('.github/workflows/brainlink-ci.yml'),
     stableLock: hashFile('AFFINE_UPSTREAM.lock'),
     zipAuthorityLock: hashFile('BRAINLINK_ZIP_AUTHORITY.lock'),
     stableManifest: hashFile('BRAINLINK_RUNTIME_V2.sha256'),
-    zipCandidateFullManifest: hashFile('BRAINLINK_ZIP_CANDIDATE_V23.sha256'),
-    zipCandidateRuntimeManifest: hashFile('BRAINLINK_ZIP_CANDIDATE_V23_RUNTIME.sha256'),
+    stablePackage: hashFile('.brainlink-runtime-overrides/package.json'),
+    zipCandidateFullCorpusManifest: hashFile('BRAINLINK_ZIP_CANDIDATE_V23.sha256'),
+    zipCandidateTransportManifest: hashFile('BRAINLINK_ZIP_CANDIDATE_V23_RUNTIME.sha256'),
+    zipCandidateFinalManifest: hashFile('BRAINLINK_ZIP_CANDIDATE_V23_FINAL.sha256'),
+    zipCandidateFinalPackage: hashFile('.brainlink-v23-final-overrides/package.json'),
     nonbreakageGuard: hashFile('scripts/brainlink-nonbreakage-guard.mjs'),
     transportAuditor: hashFile('scripts/brainlink-audit-v23-transport.mjs'),
     evidenceGenerator: hashFile('scripts/brainlink-ci-evidence.mjs'),
@@ -95,7 +104,6 @@ const evidence = {
 fs.mkdirSync(path.dirname(output), { recursive: true });
 fs.writeFileSync(output, `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
 console.log(JSON.stringify({ output, releaseGate: evidence.releaseGate, failures, releaseInvariants }, null, 2));
-
 if (enforce && evidence.releaseGate !== 'PASS') {
   console.error(`Brainlink release evidence gate failed: ${failures.join(', ') || 'release invariant failure'}`);
   process.exit(1);
