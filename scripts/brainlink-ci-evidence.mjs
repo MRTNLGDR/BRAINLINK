@@ -15,42 +15,52 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const sha256 = value => crypto.createHash('sha256').update(value).digest('hex');
 const hashFile = relative => sha256(fs.readFileSync(path.join(root, relative)));
 const parseLock = content => Object.fromEntries(
-  content
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(Boolean)
-    .map(line => {
-      const separator = line.indexOf('=');
-      return separator < 0 ? [line, ''] : [line.slice(0, separator), line.slice(separator + 1)];
-    })
+  content.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+    const separator = line.indexOf('=');
+    return separator < 0 ? [line, ''] : [line.slice(0, separator), line.slice(separator + 1)];
+  })
 );
 const isSha256 = value => /^[0-9a-f]{64}$/.test(value ?? '');
 
 const jobs = JSON.parse(process.env.BRAINLINK_JOB_RESULTS ?? '{}');
-const requiredJobs = [
-  'repository-guards',
-  'transport-audit-v23',
-  'stable-runtime',
-  'candidate-v22',
-  'candidate-v23',
-  'stable-build',
-  'candidate-v23-build',
-];
+const requiredStableJobs = ['repository-guards', 'stable-runtime', 'stable-build'];
+const candidateJobs = ['transport-audit-v23', 'candidate-v22', 'candidate-v23', 'candidate-v23-build'];
+const stableFailures = requiredStableJobs.filter(name => jobs[name] !== 'success');
 const stableLock = parseLock(read('AFFINE_UPSTREAM.lock'));
 const zipAuthority = parseLock(read('BRAINLINK_ZIP_AUTHORITY.lock'));
-const failures = requiredJobs.filter(name => jobs[name] !== 'success');
+const zipBlocked = zipAuthority.candidate_status === 'BLOCKED_CORRUPT_TRANSPORT';
+const zipRunnable = zipAuthority.candidate_status === 'NOT_PROMOTED';
+
+const candidateGovernance = zipBlocked
+  ? isSha256(zipAuthority.candidate_runtime_overlay_sha256) &&
+    isSha256(zipAuthority.candidate_runtime_observed_sha256) &&
+    zipAuthority.candidate_runtime_overlay_sha256 !== zipAuthority.candidate_runtime_observed_sha256 &&
+    zipAuthority.candidate_runtime_integrity === 'FAILED_GZIP_CRC_AND_LENGTH' &&
+    zipAuthority.candidate_promotion_allowed === 'false'
+  : zipRunnable &&
+    isSha256(zipAuthority.candidate_runtime_overlay_sha256) &&
+    isSha256(zipAuthority.candidate_runtime_manifest_sha256);
+
 const releaseInvariants = {
   stableRuntime: stableLock.brainlink_runtime_release === 'v2.1',
-  v22NotPromoted: stableLock.brainlink_candidate_status === 'NOT_PROMOTED',
-  zipCandidateNotPromoted: zipAuthority.candidate_status === 'NOT_PROMOTED',
-  zipRuntimeTransportPinned:
-    isSha256(zipAuthority.candidate_runtime_overlay_sha256) &&
-    isSha256(zipAuthority.candidate_runtime_manifest_sha256),
-  allRequiredJobsSucceeded: failures.length === 0,
+  v22NotPromoted:
+    stableLock.brainlink_candidate_release === 'v2.2' &&
+    stableLock.brainlink_candidate_status === 'NOT_PROMOTED',
+  zipCandidateIsolated:
+    stableLock.brainlink_zip_candidate_release === 'v2.3-zip-authority' &&
+    ['NOT_PROMOTED', 'BLOCKED_CORRUPT_TRANSPORT'].includes(stableLock.brainlink_zip_candidate_status),
+  zipCandidateGoverned: candidateGovernance,
+  allStableJobsSucceeded: stableFailures.length === 0,
 };
+const releaseGate = Object.values(releaseInvariants).every(Boolean) ? 'PASS' : 'FAIL';
+const candidateGate = zipBlocked
+  ? 'BLOCKED_CORRUPT_TRANSPORT'
+  : candidateJobs.every(name => jobs[name] === 'success')
+    ? 'PASS'
+    : 'FAIL';
 
 const evidence = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   kind: 'BRAINLINK_GITHUB_ACTIONS_RELEASE_EVIDENCE',
   generatedAt: new Date().toISOString(),
   source: {
@@ -71,14 +81,19 @@ const evidence = {
     node: process.version,
   },
   jobResults: jobs,
-  requiredJobs,
-  failedOrSkippedJobs: failures,
-  releaseInvariants,
-  releaseGate: Object.values(releaseInvariants).every(Boolean) ? 'PASS' : 'FAIL',
-  locks: {
-    affineUpstream: stableLock,
-    zipAuthority,
+  stableRelease: {
+    requiredJobs: requiredStableJobs,
+    failedOrSkippedJobs: stableFailures,
+    invariants: releaseInvariants,
+    gate: releaseGate,
   },
+  candidateEvaluation: {
+    jobs: Object.fromEntries(candidateJobs.map(name => [name, jobs[name] ?? 'not-reported'])),
+    status: zipAuthority.candidate_status,
+    promotionAllowed: zipAuthority.candidate_promotion_allowed !== 'false',
+    gate: candidateGate,
+  },
+  locks: { affineUpstream: stableLock, zipAuthority },
   repositoryFileHashes: {
     workflow: hashFile('.github/workflows/brainlink-ci.yml'),
     stableLock: hashFile('AFFINE_UPSTREAM.lock'),
@@ -87,16 +102,17 @@ const evidence = {
     zipCandidateFullManifest: hashFile('BRAINLINK_ZIP_CANDIDATE_V23.sha256'),
     zipCandidateRuntimeManifest: hashFile('BRAINLINK_ZIP_CANDIDATE_V23_RUNTIME.sha256'),
     nonbreakageGuard: hashFile('scripts/brainlink-nonbreakage-guard.mjs'),
-    transportAuditor: hashFile('scripts/brainlink-audit-v23-transport.mjs'),
+    strictTransportAuditor: hashFile('scripts/brainlink-audit-v23-transport.mjs'),
+    candidateStateAuditor: hashFile('scripts/brainlink-audit-v23-state.mjs'),
     evidenceGenerator: hashFile('scripts/brainlink-ci-evidence.mjs'),
   },
 };
 
 fs.mkdirSync(path.dirname(output), { recursive: true });
 fs.writeFileSync(output, `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
-console.log(JSON.stringify({ output, releaseGate: evidence.releaseGate, failures, releaseInvariants }, null, 2));
+console.log(JSON.stringify({ output, releaseGate, candidateGate, stableFailures, releaseInvariants }, null, 2));
 
-if (enforce && evidence.releaseGate !== 'PASS') {
-  console.error(`Brainlink release evidence gate failed: ${failures.join(', ') || 'release invariant failure'}`);
+if (enforce && releaseGate !== 'PASS') {
+  console.error(`Brainlink stable release evidence gate failed: ${stableFailures.join(', ') || 'stable invariant failure'}`);
   process.exit(1);
 }
