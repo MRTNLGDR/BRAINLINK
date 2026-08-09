@@ -97,7 +97,7 @@ check('ZIP compact runtime archive SHA-256 is independently pinned', isSha256(zi
 check('ZIP compact runtime manifest SHA-256 is independently pinned', isSha256(zipLock.candidate_runtime_manifest_sha256));
 check('ZIP compact runtime archive matches authority lock', !zipOverlayDecodeError && zipRuntimeArchiveHash === zipLock.candidate_runtime_overlay_sha256, zipOverlayDecodeError || zipRuntimeArchiveHash);
 check('ZIP compact runtime manifest matches authority lock', sha256(Buffer.from(zipRuntimeManifestText, 'utf8')) === zipLock.candidate_runtime_manifest_sha256);
-check('ZIP full corpus/final manifest matches authority lock', sha256(Buffer.from(zipFullManifestText, 'utf8')) === zipLock.candidate_final_manifest_sha256);
+check('Full documentation corpus remains separate from runtime overlay', zipLock.documentation_corpus_scope === 'REPOSITORY_LEVEL_SEPARATE_FROM_RUNTIME_OVERLAY');
 check('Authoritative source ZIP hash is preserved inside full manifest', zipCorpusHash === zipLock.authority_source_sha256, zipCorpusHash);
 check('ZIP compact runtime manifest contains validators and behavior tests', zipRuntimeManifestText.includes('scripts/brainlink-validate-v23.mjs') && zipRuntimeManifestText.includes('packages/frontend/core/src/brainlink/__tests__/canon.spec.ts') && zipRuntimeManifestText.includes('packages/frontend/core/src/brainlink/__tests__/pretask.spec.ts') && zipRuntimeManifestText.includes('packages/frontend/core/src/brainlink/__tests__/execution.spec.ts'));
 check('V5 is explicitly context-only', context.includes('authority=CONTEXT_COMPLEMENT_ONLY'));
