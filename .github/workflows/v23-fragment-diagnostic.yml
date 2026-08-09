@@ -22,19 +22,28 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
-      - name: Inventory fragments
+      - name: Inventory fragments and stable patch transport
         run: |
           find .brainlink-zip-candidate-v23-runtime -maxdepth 1 -type f -name 'runtime.part*.b64' -print0 \
             | sort -z -V \
             | xargs -0 sha256sum \
             | tee brainlink-v23-fragment-sha256.txt
-      - name: Upload exact checked-out fragments
+          base64 --decode .brainlink-patches/audit-v21.patch.b64 > brainlink-audit-v21.patch
+          sha256sum .brainlink-patches/audit-v21.patch.b64 brainlink-audit-v21.patch \
+            | tee brainlink-v21-patch-sha256.txt
+          nl -ba brainlink-audit-v21.patch > brainlink-audit-v21.numbered.patch
+      - name: Upload exact checked-out diagnostics
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: brainlink-v23-published-fragments-${{ github.sha }}
+          name: brainlink-source-diagnostic-${{ github.sha }}
           path: |
             .brainlink-zip-candidate-v23-runtime/runtime.part*.b64
+            .brainlink-patches/audit-v21.patch.b64
+            .brainlink-patches/app-v2.linepart*.patch
             brainlink-v23-fragment-sha256.txt
+            brainlink-v21-patch-sha256.txt
+            brainlink-audit-v21.patch
+            brainlink-audit-v21.numbered.patch
           if-no-files-found: error
           include-hidden-files: true
           retention-days: 30
