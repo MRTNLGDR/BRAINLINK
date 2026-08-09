@@ -15,6 +15,15 @@
   },
   "modules": [
     {
+      "id": "BL-MOD-BRAND",
+      "name": "Identidade unificada Brainlink",
+      "description": "Marca unica aplicada ao bootstrap, navegacao, documentos, inteligencia e superficies dinamicas.",
+      "owner": "Brainlink Experience",
+      "status": "ACTIVE",
+      "progressPercent": 100,
+      "updatedAt": "2026-08-09T21:00:00.000Z"
+    },
+    {
       "id": "BL-MOD-INSTALLER",
       "name": "Instalador e runtime",
       "description": "Materializacao deterministica, validacao e inicializacao local do Brainlink.",
@@ -161,6 +170,16 @@
       "owner": "Brainlink Core",
       "acceptanceCriteria": "Iniciar o backend AFFiNE em 3010 quando necessario ou suprimir chamadas cloud opcionais no modo local-only sem afetar CRDT local.",
       "updatedAt": "2026-08-09T20:05:00.000Z"
+    },
+    {
+      "id": "BL-TASK-012",
+      "title": "Unificar toda a identidade visivel como Brainlink",
+      "moduleId": "BL-MOD-BRAND",
+      "status": "DONE",
+      "priority": "CRITICAL",
+      "owner": "Brainlink Experience",
+      "acceptanceCriteria": "Titulo, textos, atributos, icones e superficies dinamicas apresentam somente Brainlink como produto.",
+      "updatedAt": "2026-08-09T21:00:00.000Z"
     }
   ],
   "alerts": [
@@ -213,9 +232,26 @@
       "moduleId": "BL-MOD-INSTALLER",
       "action": "Definir o perfil local-only sem chamadas cloud ou iniciar o backend AFFiNE junto ao preview quando essas funcoes forem exigidas.",
       "updatedAt": "2026-08-09T20:05:00.000Z"
+    },
+    {
+      "id": "BL-ALERT-006",
+      "title": "Identidade dupla exposta na interface",
+      "description": "Titulos, modais e superficies do motor upstream ainda exibiam uma segunda marca ao lado de Brainlink.",
+      "severity": "CRITICAL",
+      "status": "RESOLVED",
+      "moduleId": "BL-MOD-BRAND",
+      "action": "Aplicar identidade Brainlink no bootstrap e observar toda atualizacao dinamica da interface.",
+      "updatedAt": "2026-08-09T21:00:00.000Z"
     }
   ],
   "changelog": [
+    {
+      "id": "BL-CHANGE-006",
+      "version": "2.2-dev",
+      "title": "Produto unificado como Brainlink",
+      "description": "Editor, documentos, canvas, inteligencia, governanca e configuracoes agora compartilham uma unica identidade visivel.",
+      "at": "2026-08-09T21:00:00.000Z"
+    },
     {
       "id": "BL-CHANGE-005",
       "version": "2.1-dev.2",
@@ -247,6 +283,22 @@
     }
   ],
   "logs": [
+    {
+      "id": "BL-LOG-010",
+      "level": "INFO",
+      "event": "BRAINLINK_SINGLE_BRAND_ENABLED",
+      "message": "Bootstrap global de marca instalado com titulo, texto, atributos, icone e mutacoes dinamicas normalizados.",
+      "actor": "Codex",
+      "at": "2026-08-09T21:00:00.000Z"
+    },
+    {
+      "id": "BL-LOG-009",
+      "level": "WARN",
+      "event": "DUAL_BRAND_IDENTITY_FOUND",
+      "message": "Auditoria encontrou quatro ocorrencias visiveis da marca legada e titulo de pagina nao unificado.",
+      "actor": "Browser audit",
+      "at": "2026-08-09T20:55:00.000Z"
+    },
     {
       "id": "BL-LOG-008",
       "level": "WARN",
@@ -305,6 +357,14 @@
     }
   ],
   "documents": [
+    {
+      "id": "BL-DOC-005",
+      "title": "Identidade unificada Brainlink",
+      "kind": "ARCHITECTURE",
+      "path": "docs/BRAINLINK_BRAND_UNIFICATION.md",
+      "status": "CURRENT",
+      "updatedAt": "2026-08-09T21:00:00.000Z"
+    },
     {
       "id": "BL-DOC-001",
       "title": "Governance Snapshot Bridge",

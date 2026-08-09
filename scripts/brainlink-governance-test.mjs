@@ -48,7 +48,7 @@ test('grava de forma atomica e preserva contrato', () => {
   const target = path.join(temporary, 'written.json');
   const result = writeGovernanceSnapshot(target, canonical);
   assert.equal(readGovernanceSnapshot(target).schemaVersion, '1.0');
-  assert.equal(result.summary.totalModules, 4);
+  assert.equal(result.summary.totalModules, result.modules.length);
   assert.deepEqual(fs.readdirSync(temporary).filter(file => file.endsWith('.tmp')), []);
 });
 
@@ -82,4 +82,15 @@ test('transformador preserva e restaura a rota funcional de projetos', () => {
   assert.match(transform, /const PROJECTS_RENDERER/);
   assert.match(transform, /PROJECT_CREATED/);
   assert.doesNotMatch(transform, /const renderWorld =\/;/);
+});
+
+test('marca Brainlink e aplicada globalmente antes de qualquer interface dinamica', () => {
+  const brand = fs.readFileSync(path.join(root, 'brainlink-runtime', 'branding', 'brainlink-brand.ts'), 'utf8');
+  const transform = fs.readFileSync(path.join(root, 'scripts', 'apply-brainlink-brand-unification.mjs'), 'utf8');
+  assert.match(brand, /MutationObserver/);
+  assert.match(brand, /document\.title/);
+  assert.match(brand, /aria-label/);
+  assert.match(brand, /BRAND_REPOSITORY/);
+  assert.match(transform, /brainlink\/brainlink-brand/);
+  assert.match(transform, /replaceAll\('AFFiNE', 'Brainlink'\)/);
 });
