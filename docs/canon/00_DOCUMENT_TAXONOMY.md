@@ -2,75 +2,80 @@
 
 ## Purpose
 
-Brainlink keeps **all supplied documentation**, but preservation is not the same as execution authority. This taxonomy prevents an older package, a cross-product target spec, or a historical status statement from silently replacing the verified runtime.
+Brainlink preserves every supplied source, but this repository now has a clear authority rule: **the uploaded `Brainlink_Documentacao_Completa_v1.0.0.zip` is the authoritative Brainlink product/documentation baseline**. It is not rewritten in place; corrections are applied as versioned canonical repairs derived from that ZIP.
+
+Verified runtime evidence remains authoritative for one different question: **what is actually implemented and proved right now**. A historical statement such as `NOT_INSPECTED` cannot erase later executed evidence, while later code cannot silently rewrite the product intent established by the ZIP.
+
+The Oráculo/COSMETA/Brainlink V5 single-file document is retained as secondary cross-product context. It may complement the ZIP only where it does not contradict the ZIP, the latest explicit user intent, or verified non-breakage evidence.
 
 ## Document classes
 
 | Class | Meaning | May directly change runtime? |
 |---|---|---|
-| `EFFECTIVE_CONTRACT` | Machine-readable contract, lock, schema or policy explicitly promoted for the current Brainlink runtime | Yes, through normal review/test gates |
-| `VERIFIED_RUNTIME_EVIDENCE` | Executed checks, hashes, materialization/build/test evidence and current implementation facts | Describes current truth; does not itself grant new capabilities |
-| `NORMATIVE_SOURCE` | Universal engineering rules, Universalis laws and approved governance sources | Only after compilation into effective contracts/policies |
-| `BRAINLINK_TARGET_SPEC` | Desired Brainlink behavior not yet verified as runtime | No; candidate input only |
-| `CROSS_PRODUCT_TARGET_SPEC` | Oráculo/COSMETA/AIIA/Ultrabase integrated architecture that contains Brainlink context | No; may only contribute compatible Brainlink contracts |
-| `HISTORICAL_SNAPSHOT` | Older documentation package or cumulative snapshot preserved for lineage | No |
-| `ADJACENT_SYSTEM_CONTEXT` | Oráculo, COSMETA, AIIA Gateway, Ultrabase, vendor/runtime designs | No; Brainlink links/governs rather than absorbs these runtimes |
+| `ZIP_AUTHORITY_SOURCE` | Exact file/content from the authoritative Brainlink ZIP | Defines product intent and required contracts; implementation still passes gates |
+| `REPAIRED_CANON` | New artifact reconstructed from requirements explicitly present/referenced inside the ZIP, with provenance and tests | Yes, after validation; never claims it was physically present in the old ZIP |
+| `EFFECTIVE_CONTRACT` | Machine-readable contract/schema/policy promoted for the current runtime | Yes, through review/test/migration gates |
+| `VERIFIED_RUNTIME_EVIDENCE` | Executed checks, hashes, materialization/build/test evidence and current implementation facts | Describes implementation truth; does not override product intent silently |
+| `NORMATIVE_SOURCE` | Engineering Bible, executable constitution and Universalis material inside the ZIP | Compiled into effective contracts/policies |
+| `BRAINLINK_TARGET_SPEC` | Required Brainlink behavior documented by the ZIP but not yet verified | Candidate implementation input |
+| `SECONDARY_CONTEXT` | V5 Oráculo/COSMETA/AIIA/Ultrabase integrated context | No automatic runtime authority |
+| `ADJACENT_SYSTEM_CONTEXT` | Oráculo, COSMETA, AIIA Gateway, Ultrabase and vendor/runtime designs | No; Brainlink links/governs rather than absorbs these runtimes |
 | `REFERENCE_ASSET` | Visual/reference binary with provenance | No |
-| `CORPUS_GAP` | A file/artifact referenced by a snapshot but absent from that snapshot | No; must not be invented |
+| `CORPUS_GAP` | Path referenced by the ZIP but absent from the ZIP | Repaired only as `REPAIRED_CANON`, never backdated into the original package |
 | `DEPRECATED` | Superseded material retained for history | No |
 
-## Two independent precedence axes
+## Authority axis A — product intent / normative design
 
-### A. Normative / design authority
+1. Explicit current user instruction.
+2. Authoritative ZIP machine-readable contracts (`brainlink.spec.yaml`, `spec/*`, `manifests/*`) and exact preserved normative sources inside that ZIP.
+3. Repaired canonical artifacts derived from explicit ZIP requirements, when they do not contradict item 2.
+4. Effective Universalis / approved policies generated from the ZIP baseline.
+5. Accepted ADRs that do not weaken higher authority without an explicitly allowed exception.
+6. Approved research evidence.
+7. Secondary V5 context only where compatible.
+8. Other historical/explanatory/reference material.
 
-1. Current machine-readable Brainlink contracts, locks and schemas.
-2. Legrand Universal Engineering Bible / other explicitly normative source.
-3. Effective Universalis / approved policies.
-4. Accepted ADRs.
-5. Latest explicit user intent that does not violate higher-order contracts/safety.
-6. Integrated target specifications such as the V5 Oráculo/COSMETA/Brainlink document.
-7. Historical/cumulative snapshots and explanatory/reference material.
+Conflicts are preserved as `ConflictRecord`. They are never silently harmonized.
 
-Conflicts are preserved as `ConflictRecord`; they are not deleted or silently harmonized.
+## Authority axis B — implementation-status truth
 
-### B. Descriptive implementation-status truth
-
-1. Latest verified runtime evidence and current repository state.
-2. Current source code/lockfiles whose integrity is verified.
+1. Latest executed and hash-linked runtime evidence.
+2. Current source/lockfiles whose integrity is verified.
 3. Current implementation reports.
-4. Target specs.
+4. ZIP target/spec requirements not yet implemented.
 5. Historical status statements.
 
-This second axis is necessary because a 2026-08-04 document can truthfully say “runtime not inspected” at that time while later verified evidence can truthfully say the runtime now contains implemented routes/gates. The historical statement remains preserved but is not current status.
+This means the ZIP decides **what Brainlink is supposed to be**, while verified evidence decides **how much of it is currently implemented**.
 
-## Product responsibility taxonomy
+## Product boundaries from the ZIP
 
-| Product | Effective responsibility in this repository |
+| Product/system | Effective responsibility |
 |---|---|
-| **Brainlink** | knowledge, documents, Universalis, governance, tasks, worker/execution metadata, approvals, evidence, audit, bugs/solutions, knowledge-facing orchestration contracts |
-| **AFFiNE / BlockSuite** | reusable workspace/document/canvas engine and upstream UI semantics |
-| **Oráculo Master Admin** | adjacent execution/admin/worker-routing host; not reimplemented inside Brainlink |
-| **COSMETA** | adjacent universal execution/node canvas; not reimplemented inside Brainlink |
-| **Ultrabase** | external/shared data plane when the real runtime/manual is inspected; no second fake database |
-| **AIIA Gateway** | external model/provider routing and secret boundary |
+| **Brainlink** | knowledge, documents, Universalis/rule compiler, governance, tasks, workers/executions, approvals, evidence/audit, bugs/solutions, prompt archetypes, search/projections, project world and orchestration contracts |
+| **AFFiNE / BlockSuite** | reusable workspace/document/canvas engine and upstream UI semantics; extend before rewrite |
+| **Legrand Oráculo** | adjacent execution/engineering worker plane governed by Brainlink |
+| **Ultrabase** | authoritative shared/local data plane when its real runtime/manual is inspected |
+| **AIIA Suite / other products** | consumers of shared contracts; not merged into Brainlink |
+| **V5 COSMETA/Oráculo additions** | secondary context unless a Brainlink-owned requirement also exists in the ZIP |
 
 ## Version taxonomy
 
-Never compare these as if they were the same version number:
+These are separate axes and MUST NOT be conflated:
 
-- `documentation_package_version` — e.g. `Brainlink_Documentacao_Completa_v1.0.0`;
-- `cumulative_spec_edition` — e.g. `BRAINLINK-CUMULATIVE-V4`, integrated V5;
-- `product_target_version` — target product semver described by a specification;
-- `runtime_release` — currently promoted executable Brainlink runtime (`v2.1` at this record date);
-- `runtime_candidate` — non-promoted candidate (`v2.2` at this record date);
-- `state_schema_version` — persisted Brainlink state schema (`2` at this record date);
-- `affine_upstream_pin` — AFFiNE `v0.27.0` commit `c61cc6a86f5f8364732296f0bb8393b37e0f70b3`;
-- `document_version` — per-document version/front-matter.
+- `documentation_package_version`: authoritative ZIP package `1.0.0`;
+- `product_target_version`: `1.0.0` in the ZIP product spec;
+- `runtime_release`: currently promoted executable Brainlink runtime (`v2.1` at this record date);
+- `runtime_candidate`: candidate implementation line (`v2.2+` while under promotion gates);
+- `state_schema_version`: persisted local runtime schema;
+- `affine_upstream_pin`: exact AFFiNE tag/commit;
+- `document_version`: per-document/front-matter version;
+- `repair_revision`: version of canonical repairs added after the ZIP was authored.
 
 ## Corpus locations
 
-- `docs/corpus/v1.0.0/` — exact preserved first Brainlink documentation package + readable text bundle.
-- `docs/corpus/v5/` — exact supplied Oráculo/COSMETA/Brainlink V5 single-file context.
-- `docs/canon/` — reconciliation layer; this is where effective taxonomy, conflicts and current truth are recorded.
+- `docs/corpus/v1.0.0/` — exact authoritative ZIP source and readable extraction/bundle.
+- `docs/corpus/v5/` — secondary cross-product context.
+- `docs/canon/` — conflict resolution, repaired canon, current truth and traceability.
+- `contracts/`, `roadmap/`, `schemas/`, `database/`, `evidence/` — repaired/current machine-readable artifacts when generated from ZIP requirements and validated.
 
-Preserved corpus files are **immutable evidence inputs**. Corrections are made in `docs/canon/` or a new versioned corpus snapshot, never by rewriting the historical source.
+The original ZIP corpus is immutable. Corrections happen in a newer canonical layer with explicit provenance, not by pretending the old archive contained files it did not contain.
