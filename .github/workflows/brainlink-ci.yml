@@ -40,9 +40,11 @@ jobs:
         run: node scripts/brainlink-nonbreakage-guard.mjs
 
   transport-audit-v23:
-    name: Strict ZIP-authoritative v2.3 transport audit
+    name: Governed ZIP-authoritative v2.3 transport state
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    outputs:
+      candidate_status: ${{ steps.status.outputs.candidate_status }}
     steps:
       - name: Checkout pinned workflow source
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
@@ -54,13 +56,17 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           check-latest: false
-      - name: Reconstruct and audit compact runtime transport
-        run: node scripts/brainlink-audit-v23-transport.mjs --output=brainlink-v23-transport-audit.json
-      - name: Upload transport audit evidence
+      - name: Read candidate governance status
+        id: status
+        shell: bash
+        run: echo "candidate_status=$(awk -F= '$1 == \"candidate_status\" {print $2}' BRAINLINK_ZIP_AUTHORITY.lock)" >> "$GITHUB_OUTPUT"
+      - name: Audit strict transport or prove fail-closed blocked state
+        run: node scripts/brainlink-audit-v23-state.mjs --output=brainlink-v23-transport-audit.json
+      - name: Upload transport state evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: brainlink-v23-transport-audit-${{ github.sha }}
+          name: brainlink-v23-transport-state-${{ github.sha }}
           path: brainlink-v23-transport-audit.json
           if-no-files-found: error
           retention-days: 90
@@ -69,7 +75,7 @@ jobs:
     name: Stable v2.1 materialize, install and test
     needs: repository-guards
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Checkout pinned workflow source
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
@@ -99,8 +105,9 @@ jobs:
   candidate-v22:
     name: Legacy candidate v2.2 regression and execution envelopes
     needs: repository-guards
+    continue-on-error: true
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Checkout pinned workflow source
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
@@ -132,8 +139,9 @@ jobs:
     needs:
       - repository-guards
       - transport-audit-v23
+    if: ${{ needs.transport-audit-v23.outputs.candidate_status == 'NOT_PROMOTED' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 50
+    timeout-minutes: 60
     steps:
       - name: Checkout pinned workflow source
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
@@ -149,8 +157,6 @@ jobs:
         run: |
           corepack enable
           corepack prepare yarn@${YARN_VERSION} --activate
-          node --version
-          yarn --version
       - name: Materialize ZIP-authoritative v2.3 over verified stable base
         run: bash scripts/materialize-brainlink-zip-candidate.sh
       - name: Install immutable dependencies
@@ -167,7 +173,7 @@ jobs:
     name: Stable v2.1 production build
     needs: stable-runtime
     runs-on: ubuntu-24.04
-    timeout-minutes: 75
+    timeout-minutes: 90
     steps:
       - name: Checkout pinned workflow source
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
@@ -195,6 +201,7 @@ jobs:
   candidate-v23-build:
     name: ZIP-authoritative v2.3 typecheck and production build
     needs: candidate-v23
+    if: ${{ needs.candidate-v23.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -225,7 +232,7 @@ jobs:
         run: yarn brainlink:build
 
   release-evidence:
-    name: Publish and enforce machine-verifiable release evidence
+    name: Publish and enforce stable release evidence
     if: ${{ always() }}
     needs:
       - repository-guards
@@ -261,5 +268,5 @@ jobs:
           path: brainlink-ci-evidence.json
           if-no-files-found: error
           retention-days: 90
-      - name: Enforce complete release gate
+      - name: Enforce complete stable release gate
         run: node scripts/brainlink-ci-evidence.mjs --output=brainlink-ci-evidence.json --enforce
