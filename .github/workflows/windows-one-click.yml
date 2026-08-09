@@ -1,0 +1,56 @@
+name: Windows one-click installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'BRAINLINK*.bat'
+      - 'AFFINE_UPSTREAM.lock'
+      - 'BRAINLINK_RUNTIME_V2.sha256'
+      - 'scripts/brainlink-*.mjs'
+      - 'scripts/brainlink-bootstrap.ps1'
+      - 'scripts/materialize-brainlink.ps1'
+      - 'scripts/materialize-brainlink.sh'
+      - '.brainlink-runtime/**'
+      - '.brainlink-runtime-overrides/**'
+      - '.brainlink-patches/**'
+      - '.github/workflows/windows-one-click.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: brainlink-windows-one-click-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  one-click-user-path:
+    name: Clean Windows user install, build and browser smoke
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      CI: 'true'
+      BRAINLINK_HOME: ${{ runner.temp }}\Brainlink
+      BRAINLINK_PORT: '8080'
+    steps:
+      - name: Checkout public bootstrap
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run the same BAT used by the user
+        shell: cmd
+        run: BRAINLINK.bat --ci --no-launch --force
+
+      - name: Upload installer, build and browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brainlink-windows-one-click-evidence-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            ${{ env.BRAINLINK_HOME }}\logs\**
+            ${{ env.BRAINLINK_HOME }}\workspace\evidence\**
+            ${{ env.BRAINLINK_HOME }}\state\**
