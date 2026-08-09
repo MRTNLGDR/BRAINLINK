@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-08",
+  "policy": "preserve_verbatim_reconcile_outside_source",
+  "sources": [
+    {
+      "id": "brainlink-docs-v1",
+      "classification": [
+        "HISTORICAL_SNAPSHOT",
+        "BRAINLINK_TARGET_SPEC",
+        "NORMATIVE_SOURCE_COMPONENTS"
+      ],
+      "source_name": "Brainlink_Documentacao_Completa_v1.0.0 (1).zip",
+      "sha256": "4bce9d511680c70d7cfd51dbc4ef203172a46fa4d10388acd16209fa6b556c09",
+      "bytes": 320832,
+      "integrity": "SHA256SUMS 56/56 included files PASS"
+    },
+    {
+      "id": "oraculo-cosmeta-brainlink-v5",
+      "classification": [
+        "CROSS_PRODUCT_TARGET_SPEC",
+        "CONTEXT_COMPLEMENT_ONLY"
+      ],
+      "source_name": "00_ORACULO_MASTER_ADMIN_COSMETA_BRAINLINK_CUMULATIVO_V5_SINGLE_FILE_2026-08-07 (2).md",
+      "sha256": "7fef02277ce23bd6cf937e8ba5dd12e2f90e756e073179341144f48306cb0d7b",
+      "bytes": 432930,
+      "lines": 14403
+    }
+  ],
+  "effective_runtime": {
+    "release": "v2.1",
+    "candidate": "v2.2",
+    "candidate_promoted": false,
+    "state_schema": 2,
+    "affine_tag": "v0.27.0",
+    "affine_commit": "c61cc6a86f5f8364732296f0bb8393b37e0f70b3"
+  },
+  "reconciliation_files": [
+    "docs/canon/00_DOCUMENT_TAXONOMY.md",
+    "docs/canon/01_CONFLICT_REGISTER.md",
+    "docs/canon/02_EFFECTIVE_CANON.md"
+  ],
+  "rule": "corpus sources never directly mutate runtime; adoption requires effective-contract promotion and verification"
+}
