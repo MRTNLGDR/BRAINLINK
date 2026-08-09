@@ -4,6 +4,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
+import { applyAuditV21 } from './apply-audit-v21.mjs';
 import { patchBrainlinkPackage } from './brainlink-package-patch.mjs';
 
 const DEFAULTS = Object.freeze({
@@ -144,14 +145,6 @@ const reconstructBaseOverlay = ({ sourceRoot, workspaceRoot }) => {
   return archivePath;
 };
 
-const decodeAuditPatch = ({ sourceRoot, workspaceRoot }) => {
-  const encodedPath = path.join(sourceRoot, '.brainlink-patches', 'audit-v21.patch.b64');
-  const encoded = fs.readFileSync(encodedPath, 'utf8').replace(/\s+/g, '');
-  const patchPath = path.join(workspaceRoot, 'brainlink-audit-v21.patch');
-  fs.writeFileSync(patchPath, Buffer.from(encoded, 'base64'));
-  return patchPath;
-};
-
 const assembleAppPatch = ({ sourceRoot, workspaceRoot }) => {
   const patchDir = path.join(sourceRoot, '.brainlink-patches');
   const parts = fs.readdirSync(patchDir)
@@ -235,14 +228,15 @@ export const materializeBrainlink = async options => {
   }
 
   const manifest = path.join(sourceRoot, 'BRAINLINK_RUNTIME_V2.sha256');
+  const auditTransform = path.join(sourceRoot, 'scripts', 'apply-audit-v21.mjs');
   if (!fs.existsSync(manifest)) throw new Error(`Missing Brainlink manifest: ${manifest}`);
+  if (!fs.existsSync(auditTransform)) throw new Error(`Missing deterministic audit transform: ${auditTransform}`);
   if (fs.existsSync(path.join(sourceRoot, '.brainlink-runtime-overrides', 'package.json'))) {
     throw new Error('Unsafe lockfile-drifting package.json override is present. Stable materialization is blocked.');
   }
 
   const archivePath = reconstructBaseOverlay({ sourceRoot, workspaceRoot });
   const appPatch = assembleAppPatch({ sourceRoot, workspaceRoot });
-  const auditPatch = decodeAuditPatch({ sourceRoot, workspaceRoot });
   await ensureUpstreamWorkspace({ git, target, quarantineRoot });
 
   const tar = findTar(git);
@@ -255,7 +249,13 @@ export const materializeBrainlink = async options => {
   run(git, ['-C', target, 'checkout', '--',
     'package.json', 'yarn.lock', '.yarnrc.yml', '.yarn/releases/yarn-4.13.0.cjs']);
   run(git, ['-C', target, 'apply', '--whitespace=nowarn', appPatch]);
-  run(git, ['-C', target, 'apply', '--whitespace=nowarn', auditPatch]);
+
+  // The historical audit patch transport has an invalid final hunk count and
+  // is preserved only as provenance. The executable path applies the same
+  // six source changes through exact anchors and requires the published final
+  // app.tsx SHA-256 before continuing.
+  applyAuditV21(target);
+
   patchBrainlinkPackage(target);
   verifyManifest({ sourceRoot, target });
 
@@ -285,6 +285,7 @@ export const materializeBrainlink = async options => {
     platform: `${process.platform}-${process.arch}`,
     manifestSha256: sha256File(manifest),
     packageJsonSha256: sha256File(path.join(target, 'package.json')),
+    appSha256: sha256File(path.join(target, 'packages', 'frontend', 'core', 'src', 'brainlink', 'app.tsx')),
     verifiedAt: new Date().toISOString(),
   };
   fs.mkdirSync(path.join(workspaceRoot, 'evidence'), { recursive: true });
