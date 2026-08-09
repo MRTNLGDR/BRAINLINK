@@ -58,7 +58,7 @@ assert('No secret value field in state model', !types.includes('secretValue'));
 assert('AFFiNE technical workspace identity preserved', pkg.name === '@affine/monorepo');
 assert('Brainlink scripts registered', Boolean(pkg.scripts?.['brainlink:dev'] && pkg.scripts?.['brainlink:build'] && pkg.scripts?.['brainlink:validate']));
 assert('Brainlink targeted test/check scripts registered', Boolean(pkg.scripts?.['brainlink:test'] && pkg.scripts?.['brainlink:check']));
-assert('Cumulative Brainlink V4 specification preserved', exists('brainlink-spec/BRAINLINK_CUMULATIVO_V4_COMPLETE.md') || root.includes('brainlink-final-verify'));
+assert('Runtime governance canon preserved', exists('docs/43_RUNTIME_IMPLEMENTATION_REPORT_2026-08-08.md') && exists('docs/44_GOVERNANCE_HARDENING_2026-08-08.md'));
 
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}${check.detail ? ` — ${check.detail}` : ''}`);
 console.log(`\n${checks.length - failures.length}/${checks.length} checks passed.`);
