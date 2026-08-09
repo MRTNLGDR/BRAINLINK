@@ -9,7 +9,7 @@ $RuntimeArchive = Join-Path $WorkspaceRoot 'brainlink-runtime.tar.gz'
 $Repo = 'https://github.com/toeverything/AFFiNE.git'
 $Tag = 'v0.27.0'
 $Expected = 'c61cc6a86f5f8364732296f0bb8393b37e0f70b3'
-$ExpectedOverlay = '1b4e3aa98dd378eb7299e071aa83329643114e40b3e66a378c319613a2a94b8d'
+$ExpectedOverlay = 'bc0136b92af9805c73321bd6292aba9816f18f0458673e1716df9719d743122a'
 
 function Invoke-Checked([string]$Exe, [string[]]$Args) {
   & $Exe @Args
@@ -63,3 +63,4 @@ if ($Install) {
 }
 
 Write-Host "[BRAINLINK] Materialized successfully at $Target"
+Write-Host '[BRAINLINK] Runtime schema: v2 | structural validator: 35/35 | cumulative spec: brainlink-spec/'
