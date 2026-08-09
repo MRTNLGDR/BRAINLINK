@@ -18,14 +18,15 @@ Implemented changes:
 - bug solution text no longer auto-marks a bug solved; an explicit verification action is required;
 - project progress is derived from actual task completion rather than a manual `+10%` button;
 - backup parsing validates the full state shape and migrates legacy v1 state;
-- destructive local reset requires confirmation and leaves a reset tombstone in the new audit ledger.
+- destructive local reset requires confirmation and leaves a reset tombstone in the audit ledger;
+- audit events are sealed with SHA-256 `prevHash`/`eventHash`, imported sealed chains are verified, legacy unsealed histories are sealed once, and silent history truncation is forbidden.
 
 ## Verification
 
-- Brainlink structural validator: **35/35 PASS**.
+- Brainlink structural validator: **42/42 PASS**.
 - TypeScript strict check for Brainlink `types.ts`, `store.ts`, `policy.ts`: **PASS**.
 - Isolated strict semantic check for `app.tsx` with only React/Router declarations stubbed: **PASS**.
-- Executed governance behavior cases with compiled policy/store modules: **10/10 PASS**.
+- Executed governance behavior cases with compiled policy/store modules: **15/15 PASS**.
 - Vitest suites authored for policy and state migration/import invariants.
 
 ## Still not claimed
