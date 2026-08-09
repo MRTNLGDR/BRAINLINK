@@ -2,36 +2,67 @@
 
 Brainlink is a governed, local-first knowledge and agent workspace built as a compatibility-preserving layer on top of **AFFiNE v0.27.0**.
 
-## Source of truth
+## Use only one file on Windows
 
-The primary Brainlink product/documentation authority is the user-supplied `Brainlink_Documentacao_Completa_v1.0.0.zip`:
+Double-click:
 
-- SHA-256: `4bce9d511680c70d7cfd51dbc4ef203172a46fa4d10388acd16209fa6b556c09`;
-- 63 archive entries;
-- 56/56 included files validated by the archive's own checksum set.
+```bat
+BRAINLINK.bat
+```
 
-The ZIP is preserved as source evidence. Corrections are additive: missing referenced artifacts are repaired in versioned canonical/runtime layers with provenance instead of rewriting the source archive. The later Oráculo/COSMETA/Brainlink V5 document is **secondary context only** and cannot override the Brainlink ZIP or silently expand Brainlink into another product.
+The same BAT is the installer, updater, repair tool, verifier, builder and launcher. It is safe to run again after downloading a newer copy, moving the downloaded folder, interrupting an install or changing machines.
 
-## AFFiNE foundation
+On every normal run it:
 
-The exact upstream base is pinned in `AFFINE_UPSTREAM.lock`:
+1. selects the canonical Brainlink home (`D:\AIIA\01-apps-canonicos\26-Brainlink` when `D:` exists, otherwise `%LOCALAPPDATA%\Brainlink`);
+2. installs a private **Node.js 22.23.0** runtime from the official Node archive and verifies its pinned SHA-256;
+3. downloads the current official **MinGit** release, verifies the GitHub-published SHA-256 digest or Authenticode signature, and keeps it private to Brainlink;
+4. enables/checks Windows long-path and symbolic-link capability required by AFFiNE;
+5. clones or updates `MRTNLGDR/BRAINLINK` into the canonical managed source directory;
+6. repairs/recreates the pinned AFFiNE `v0.27.0` workspace at commit `c61cc6a86f5f8364732296f0bb8393b37e0f70b3`;
+7. verifies the base overlay, patches and every stable runtime file;
+8. restores the exact upstream `package.json`, `yarn.lock`, `.yarnrc.yml` and bundled Yarn before adding Brainlink scripts, preventing dependency-lock drift;
+9. runs `yarn install --immutable` through the bundled Yarn 4.13.0, without depending on Corepack;
+10. runs stable structural validation and Brainlink Vitest suites;
+11. builds the real AFFiNE web application;
+12. starts a local SPA server, verifies `/healthz` and `/brainlink`;
+13. opens the app in a real headless Edge session through Playwright, checks that Brainlink rendered, rejects unhandled page errors and stores browser screenshot/evidence;
+14. opens `http://127.0.0.1:8080/brainlink` for the user.
 
-- upstream: `toeverything/AFFiNE`;
-- tag: `v0.27.0`;
-- commit: `c61cc6a86f5f8364732296f0bb8393b37e0f70b3`.
+Logs, state, downloads, evidence and the workspace live outside the downloaded bootstrap folder. Moving that folder therefore does not orphan the installed app.
 
-Brainlink reuses AFFiNE documents, BlockSuite Canvas, workspace behavior and local-first semantics rather than rebuilding or replacing them.
+### Compatibility wrappers
+
+The older names now delegate to the same one-click pipeline:
+
+```bat
+BRAINLINK_SETUP.bat   rem install + validate + tests
+BRAINLINK_BUILD.bat   rem install + validate + tests + production build
+BRAINLINK_DEV.bat     rem install + validate + tests + AFFiNE dev server
+```
+
+Useful optional flags:
+
+```bat
+BRAINLINK.bat --force
+BRAINLINK.bat --setup-only
+BRAINLINK.bat --build-only
+BRAINLINK.bat --dev
+BRAINLINK.bat --skip-update
+BRAINLINK.bat --offline
+```
+
+The default path remains the production web build. `--dev` is for development only.
+
+## Root cause fixed
+
+The previous stable materializer copied a historical root `package.json` whose dependency/resolution versions did not match the pinned AFFiNE `yarn.lock`. Because setup then invoked `yarn install --immutable`, installation was guaranteed to stop before the app could open. The old BATs also assumed Git, compatible Node, Corepack, Yarn and Windows symlink support already existed.
+
+The root package is no longer shipped as a stable overlay. The materializer restores the exact upstream lock-sensitive files and applies only Brainlink metadata/scripts after verifying the official package Git blob. The stable manifest deliberately excludes mutable `package.json` while validating the final dependency contract at runtime.
 
 ## Stable runtime — v2.1
 
-The normal production-oriented development baseline remains **v2.1** while the ZIP-authoritative candidate is under promotion testing.
-
-```bat
-BRAINLINK_SETUP.bat
-BRAINLINK_DEV.bat
-```
-
-Stable v2.1 includes:
+Stable v2.1 remains the normal recovery and user path. It includes:
 
 - 39 primary + 5 contextual Brainlink route intents;
 - scoped Universalis/read receipts;
@@ -45,107 +76,28 @@ Stable v2.1 includes:
 - tamper-evident SHA-256 audit chain with monotonic sequence, `prevHash` and `eventHash`;
 - rejection of altered sealed audit history and no silent audit truncation.
 
-Stable evidence currently records **42/42 structural checks** and **15/15 governance/integrity behavior cases**.
+The stable validator contains **45 structural/runtime invariants**. The repository one-click validator contains **26 installer/non-breakage invariants**. Windows CI executes the same public `BRAINLINK.bat --ci` path used by a clean user, including immutable install, tests, production build, local server and real-browser smoke.
 
-## ZIP-authoritative candidate — v2.3
+## Source of truth and product boundaries
 
-`v2.3-zip-authority` is the current candidate. It supersedes the earlier v2.2 candidate but **does not replace stable v2.1 yet**.
+The primary Brainlink documentation authority remains the user-supplied `Brainlink_Documentacao_Completa_v1.0.0.zip` (SHA-256 `4bce9d511680c70d7cfd51dbc4ef203172a46fa4d10388acd16209fa6b556c09`). The Oráculo/COSMETA/Brainlink V5 document is secondary cross-product context only.
 
-Windows candidate setup:
+Brainlink remains the knowledge/governance plane. COSMETA remains the visual execution/canvas plane. Oráculo remains the execution/admin plane. Ultrabase remains an external data-plane boundary until its real runtime/manual/migrations are available. No external service is shown as connected or healthy without a real transport and evidence.
 
-```bat
-BRAINLINK_SETUP_ZIP_CANDIDATE.bat
-BRAINLINK_DEV.bat
-```
+## Candidate runtime — not the default
 
-The candidate materializer is intentionally fail-closed:
+`v2.3-zip-authority` remains `NOT_PROMOTED`. Candidate files and materializers stay physically separate from stable v2.1. Running `BRAINLINK.bat` never silently promotes or injects candidate code.
 
-1. audits the candidate transport before touching AFFiNE;
-2. reconstructs verified stable v2.1;
-3. rebuilds the compact v2.3 runtime archive from versioned Base64 fragments;
-4. verifies its pinned SHA-256;
-5. applies it over stable;
-6. verifies every final candidate file against `BRAINLINK_ZIP_CANDIDATE_V23_RUNTIME.sha256`;
-7. runs the stable regression validator and the v2.3 validator;
-8. only with `-Install`, performs immutable dependency installation and `brainlink:check`.
+Candidate promotion still requires its own complete compatibility, security, rollback and installed-runtime evidence. The new one-click work improves the stable user path; it does not bypass that governance gate.
 
-The candidate runtime transport is deliberately separate from the documentation corpus:
+## Files and evidence
 
-- 18 ordered transport fragments;
-- 60,911 decoded archive bytes;
-- runtime overlay SHA-256: `72375fababaae6f48037d1a5b072ed18988a8bf6db566f95dcd0426433b5340f`;
-- 30 final runtime files;
-- manifest SHA-256: `79e73c0bb0c18708bdd5fbe3a8c7100e3966b37e4e85440d408df0896830ead0`.
-
-### ZIP-aligned corrections in v2.3
-
-The candidate reconciles the existing implementation with the ZIP instead of discarding working code:
-
-- all **40 canonical `LAW-001..LAW-040` laws**; older conflicting local IDs are preserved as legacy history instead of being silently overwritten;
-- all **11 rule-precedence scopes** from platform safety through incident/error;
-- all **11 rule read-gates**, with receipts scoped to the specific gate;
-- literal **PreTask100**: exactly 100 auditable checks in 10 categories, not 100 hidden LLM loops;
-- immutable per-attempt Execution/Task Envelopes with correlation ID, rule-pack/hash, capabilities, budget, context references, criteria, verifiers, rollback, checkpoints and result/error history;
-- bounded retry/stagnation controls and repeated-error anti-loop enforcement;
-- expanded execution lifecycle;
-- connector write approval bound to exact payload hash and expiry;
-- evidence truth states so `DONE` is not automatically a `VERIFIED` claim;
-- 16 KB structured micro-event payload limit and explicit execution budgets;
-- repaired target OpenAPI, AsyncAPI, MCP, error-code, roadmap, checklist and schema artifacts referenced by the authoritative ZIP;
-- external systems remain explicit boundaries instead of fake integrations.
-
-Candidate evidence records **54/54 ZIP-alignment structural checks**, **35/35 behavior cases**, TypeScript strict core `PASS`, isolated app semantic check `PASS`, and stable **42/42 regression checks** in a clean simulation.
-
-See `docs/evidence/ZIP_CANDIDATE_V23_TRANSPORT_VERIFICATION_2026-08-08.md` and `BRAINLINK_ZIP_AUTHORITY.lock`.
-
-## Why v2.3 is still NOT_PROMOTED
-
-The current execution environment cannot complete the package-registry-dependent release gate. Therefore Brainlink does not claim full production certification yet. Promotion still requires, in an environment with registry access:
-
-- immutable dependency installation;
-- full production build;
-- installed Vitest/integration suites;
-- browser E2E and negative-path tests;
-- accessibility/security checks;
-- backup/import compatibility in the installed app;
-- demonstrated rollback from candidate to stable.
-
-A newer document or a green structural validator cannot bypass these gates.
-
-## Documentation and taxonomy
-
-Documentation is separated from runtime so historical/cumulative material never overwrites AFFiNE technical workspaces or current implementation truth.
-
-- `docs/corpus/v1.0.0/` — authoritative ZIP preservation/reconstruction material;
-- `docs/corpus/v5/` — secondary V5 cross-product context;
-- `docs/canon/` — taxonomy, conflict resolution and effective Brainlink canon;
-- `docs/evidence/` — runtime/materialization/verification evidence.
-
-Version axes are intentionally separate: documentation package version, target-product version, runtime release, state schema and AFFiNE upstream pin are not interchangeable.
-
-## External boundaries — no fake completion
-
-The ZIP specifies several real integrations whose runtimes/credentials/manuals are not present here. They remain explicit `BLOCKED_RUNTIME_INPUT`/adapter boundaries until inspected:
-
-- Ultrabase production schema/migrations/RLS/Storage/Realtime;
-- production MCP transports/servers;
-- Secret Broker/OpenBao;
-- provider credentials and remote notification services;
-- user-machine C:/D: inventory/migration;
-- external vendor builds and runtime license validation.
-
-Brainlink may define contracts for these boundaries, but it does not display them as connected or healthy without a real transport and evidence.
-
-## Verification commands
-
-After dependencies are available in the materialized workspace:
-
-```bash
-yarn brainlink:validate
-yarn brainlink:test
-yarn brainlink:check
-yarn brainlink:dev
-yarn brainlink:build
-```
-
-The normal `BRAINLINK_SETUP.bat` always remains the recovery path to stable v2.1 until the candidate promotion gate is completed.
+- `AFFINE_UPSTREAM.lock` — upstream, stable/candidate status and verification counters;
+- `BRAINLINK_RUNTIME_V2.sha256` — immutable stable runtime file manifest;
+- `scripts/brainlink-bootstrap.ps1` — portable Windows toolchain/bootstrap;
+- `scripts/brainlink-one-click.mjs` — update/install/build/launch orchestrator;
+- `scripts/brainlink-materialize.mjs` — deterministic stable materializer;
+- `scripts/brainlink-browser-smoke.mjs` — real-user browser smoke;
+- `scripts/brainlink-installer-validate.mjs` — installer invariants;
+- `docs/48_WINDOWS_ONE_CLICK_INSTALLER_2026-08-09.md` — implementation and recovery contract;
+- `docs/evidence/WINDOWS_ONE_CLICK_VERIFICATION_2026-08-09.md` — verification record and honest limits.
