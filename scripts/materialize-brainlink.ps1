@@ -5,7 +5,9 @@ $WorkspaceRoot = Join-Path $Root '.brainlink-workspace'
 $Target = Join-Path $WorkspaceRoot 'AFFiNE'
 $RuntimeDir = Join-Path $Root '.brainlink-runtime'
 $Overrides = Join-Path $Root '.brainlink-runtime-overrides'
+$PatchDir = Join-Path $Root '.brainlink-patches'
 $RuntimeArchive = Join-Path $WorkspaceRoot 'brainlink-runtime.tar.gz'
+$AppPatch = Join-Path $WorkspaceRoot 'brainlink-app-v2.patch'
 $Manifest = Join-Path $Root 'BRAINLINK_RUNTIME_V2.sha256'
 $Repo = 'https://github.com/toeverything/AFFiNE.git'
 $Tag = 'v0.27.0'
@@ -21,6 +23,7 @@ function Invoke-Checked([string]$Exe, [string[]]$Args) {
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'Git is required.' }
 if (-not (Test-Path $RuntimeDir)) { throw "Missing Brainlink runtime bundle: $RuntimeDir" }
 if (-not (Test-Path $Manifest)) { throw "Missing Brainlink v2 integrity manifest: $Manifest" }
+if (-not (Test-Path $PatchDir)) { throw "Missing Brainlink v2 patch directory: $PatchDir" }
 New-Item -ItemType Directory -Force -Path $WorkspaceRoot | Out-Null
 
 $Encoded = (Get-ChildItem (Join-Path $RuntimeDir 'runtime.part*.b64') | Sort-Object Name | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
@@ -41,7 +44,7 @@ if ($Actual -ne $Expected) {
   throw "AFFiNE revision mismatch. Expected $Expected, got $Actual. Delete .brainlink-workspace and run setup again."
 }
 
-Write-Host '[BRAINLINK] Resetting upstream workspace and applying verified overlay...'
+Write-Host '[BRAINLINK] Resetting upstream workspace and applying verified base overlay...'
 Invoke-Checked git @('-C',$Target,'reset','--hard',$Expected)
 Invoke-Checked git @('-C',$Target,'clean','-fd')
 & tar -xzf $RuntimeArchive -C $Target
@@ -51,6 +54,10 @@ if (Test-Path $Overrides) {
     Copy-Item -LiteralPath $_.FullName -Destination $Target -Recurse -Force
   }
 }
+
+$PatchText = (Get-ChildItem (Join-Path $PatchDir 'app-v2.part*.patch') | Sort-Object Name | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
+[IO.File]::WriteAllText($AppPatch, $PatchText, [Text.UTF8Encoding]::new($false))
+Invoke-Checked git @('-C',$Target,'apply','--whitespace=nowarn',$AppPatch)
 
 Get-Content $Manifest | ForEach-Object {
   if ($_ -match '^([0-9a-f]{64})\s+(.+)$') {
