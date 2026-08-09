@@ -73,3 +73,11 @@ test('frontend possui todos os gatilhos de sincronizacao e estados explicitos', 
   const panel = fs.readFileSync(path.join(root, 'brainlink-runtime', 'governance', 'governance-panel.tsx'), 'utf8');
   for (const marker of ['useQuery({', 'staleTime: 0', 'refetchInterval: 15_000', 'refetchOnWindowFocus: true', 'GOVERNANCE_UPDATED_EVENT', 'connectGovernanceEvents', 'query.isPending', 'query.isError', 'query.refetch()']) assert.match(panel, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 });
+
+test('transformador preserva e restaura a rota funcional de projetos', () => {
+  const transform = fs.readFileSync(path.join(root, 'scripts', 'apply-affine-governance-bridge.mjs'), 'utf8');
+  assert.match(transform, /const nextRenderer = app\.indexOf\('\\n\\n  const renderProjects ='/);
+  assert.match(transform, /const PROJECTS_RENDERER/);
+  assert.match(transform, /PROJECT_CREATED/);
+  assert.doesNotMatch(transform, /const renderWorld =\/;/);
+});

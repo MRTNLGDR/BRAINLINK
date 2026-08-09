@@ -141,6 +141,16 @@
       "owner": "Brainlink Experience",
       "acceptanceCriteria": "Titulo principal permanece legivel sobre o hero claro quando o workspace usa tema escuro.",
       "updatedAt": "2026-08-09T19:00:00.000Z"
+    },
+    {
+      "id": "BL-TASK-010",
+      "title": "Restaurar a rota funcional de projetos apos integracao da governanca",
+      "moduleId": "BL-MOD-UI",
+      "status": "DONE",
+      "priority": "CRITICAL",
+      "owner": "Brainlink Experience",
+      "acceptanceCriteria": "A rota /brainlink/projects renderiza, cria projetos e abre detalhes sem ReferenceError.",
+      "updatedAt": "2026-08-09T20:00:00.000Z"
     }
   ],
   "alerts": [
@@ -173,9 +183,26 @@
       "moduleId": "BL-MOD-UI",
       "action": "Fixar a cor semantica escura do titulo somente dentro do hero claro.",
       "updatedAt": "2026-08-09T19:00:00.000Z"
+    },
+    {
+      "id": "BL-ALERT-004",
+      "title": "ReferenceError na rota de projetos",
+      "description": "A substituicao ampla de renderDashboard removeu a declaracao renderProjects do arquivo materializado.",
+      "severity": "CRITICAL",
+      "status": "RESOLVED",
+      "moduleId": "BL-MOD-UI",
+      "action": "Isolar a substituicao pelo proximo renderer, restaurar renderProjects e manter teste de regressao.",
+      "updatedAt": "2026-08-09T20:00:00.000Z"
     }
   ],
   "changelog": [
+    {
+      "id": "BL-CHANGE-005",
+      "version": "2.1-dev.2",
+      "title": "Rota de projetos restaurada",
+      "description": "Transformador corrigido para preservar renderProjects e tela funcional recomposta com criacao, listagem e detalhe.",
+      "at": "2026-08-09T20:00:00.000Z"
+    },
     {
       "id": "BL-CHANGE-004",
       "version": "2.1-dev.1",
@@ -200,6 +227,22 @@
     }
   ],
   "logs": [
+    {
+      "id": "BL-LOG-007",
+      "level": "INFO",
+      "event": "PROJECTS_ROUTE_RESTORED",
+      "message": "Renderer de projetos restaurado e transformador protegido por teste de regressao.",
+      "actor": "Codex",
+      "at": "2026-08-09T20:00:00.000Z"
+    },
+    {
+      "id": "BL-LOG-006",
+      "level": "ERROR",
+      "event": "PROJECTS_RENDERER_REFERENCE_ERROR",
+      "message": "Preview reportou renderProjects is not defined na rota /brainlink/projects.",
+      "actor": "Browser audit",
+      "at": "2026-08-09T19:55:00.000Z"
+    },
     {
       "id": "BL-LOG-005",
       "level": "INFO",

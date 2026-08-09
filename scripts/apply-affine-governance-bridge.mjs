@@ -4,6 +4,29 @@ import { fileURLToPath } from 'node:url';
 
 const scriptRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+const PROJECTS_RENDERER = `  const renderProjects = () => {
+    const addProject = (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const data = new FormData(event.currentTarget);
+      const name = String(data.get('name') || '').trim();
+      if (!name) return;
+      commit('PROJECT_CREATED', name, draft => draft.projects.unshift({
+        id: createBrainlinkId('PRJ'),
+        name,
+        description: String(data.get('description') || '').trim(),
+        health: 100,
+        progress: 0,
+        createdAt: new Date().toISOString(),
+      }));
+      event.currentTarget.reset();
+    };
+    return <div className="bl-grid">
+      <Card title="Create project" span="12"><form className="bl-form" onSubmit={addProject}><div className="bl-field" data-span="4"><label>Name</label><input name="name" required /></div><div className="bl-field" data-span="6"><label>Description</label><input name="description" /></div><div className="bl-field"><label>&nbsp;</label><button className="bl-btn" data-primary="true">Create project</button></div></form></Card>
+      {state.projects.map(project => { const tasks = state.tasks.filter(task => task.projectId === project.id); const progress = projectProgress(state, project.id); return <Card key={project.id} title={project.name} span="6"><p>{project.description || 'No description.'}</p><div className="bl-meta"><Badge tone={project.health >= 75 ? 'good' : project.health >= 50 ? 'warn' : 'bad'}>health {project.health}</Badge><Badge>{progress}%</Badge><Badge>{tasks.length} tasks</Badge></div><div className="bl-progress"><span style={{ width: progress + '%' }} /></div><div className="bl-actions" style={{ marginTop: 12 }}><button className="bl-btn" data-primary="true" onClick={() => navigate(base + '/projects/' + project.id)}>Open project</button></div></Card>; })}
+      {state.projects.length === 0 ? <Card span="12"><div className="bl-empty">No projects. Create the first governed project above.</div></Card> : null}
+    </div>;
+  };`;
+
 function copy(source, target) {
   fs.mkdirSync(path.dirname(target), { recursive: true });
   fs.copyFileSync(source, target);
@@ -31,10 +54,16 @@ export function applyAffineGovernanceBridge({ sourceRoot = scriptRoot, targetRoo
   const appFile = path.join(appRoot, 'app.tsx');
   let app = fs.readFileSync(appFile, 'utf8');
   app = patchOnce(app, "import {", "import { GovernancePanel } from './governance-panel';\n\nimport {", 'import do painel');
-  const dashboardPattern = /  const renderDashboard = \(\) =>[\s\S]*?\n\n  const renderWorld =/;
   if (!app.includes('const renderDashboard = () => <GovernancePanel />;')) {
-    if (!dashboardPattern.test(app)) throw new Error('Nao foi possivel localizar renderDashboard.');
-    app = app.replace(dashboardPattern, '  const renderDashboard = () => <GovernancePanel />;\n\n  const renderWorld =');
+    const dashboardStart = app.indexOf('  const renderDashboard = () =>');
+    const nextRenderer = app.indexOf('\n\n  const renderProjects =', dashboardStart);
+    if (dashboardStart < 0 || nextRenderer < 0) throw new Error('Nao foi possivel isolar renderDashboard sem atingir renderProjects.');
+    app = `${app.slice(0, dashboardStart)}  const renderDashboard = () => <GovernancePanel />;${app.slice(nextRenderer)}`;
+  }
+  if (!app.includes('  const renderProjects = () =>')) {
+    const dashboard = '  const renderDashboard = () => <GovernancePanel />;';
+    if (!app.includes(dashboard)) throw new Error('Nao foi possivel restaurar renderProjects: dashboard ausente.');
+    app = app.replace(dashboard, `${dashboard}\n\n${PROJECTS_RENDERER}`);
   }
   fs.writeFileSync(appFile, app);
 
